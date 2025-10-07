@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kite Flight - GoKiteAI</title>
 <style>
-html, body { margin:0; padding:0; overflow:hidden; font-family: Arial, sans-serif; }
+html, body { margin:0; padding:0; overflow:hidden; font-family: Arial, sans-serif; background:#87CEEB; }
 canvas { display:block; }
 #score { position:absolute; top:20px; left:50%; transform:translateX(-50%); font-size:32px; font-weight:bold; color:#fff; text-shadow:2px 2px 4px #000; z-index:10; }
 #overlay {
@@ -17,6 +17,7 @@ canvas { display:block; }
   background:white; padding:20px; border-radius:12px; text-align:center; max-width:320px;
 }
 button { padding:10px 16px; margin:8px 4px 0 4px; font-size:16px; border:none; border-radius:8px; background:#fdd835; color:#212121; cursor:pointer; }
+#leaderboard { text-align:left; margin-top:8px; font-size:14px; color:#555; }
 </style>
 </head>
 <body>
@@ -28,10 +29,15 @@ button { padding:10px 16px; margin:8px 4px 0 4px; font-size:16px; border:none; b
     <p id="overlayText">Tap or Click to Start</p>
     <button id="startBtn">Start Game</button>
     <button id="shareBtn" style="display:none;">Share on X</button>
+    <div id="leaderboard"></div>
   </div>
 </div>
 
 <canvas id="gameCanvas"></canvas>
+
+<audio id="jumpSound" src="https://assets.mixkit.co/sfx/preview/mixkit-player-jumping-in-a-video-game-2046.mp3"></audio>
+<audio id="pointSound" src="https://assets.mixkit.co/sfx/preview/mixkit-video-game-score-interface-2079.mp3"></audio>
+<audio id="crashSound" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-retro-game-over-213.mp3"></audio>
 
 <script>
 const canvas = document.getElementById('gameCanvas');
@@ -40,7 +46,7 @@ const ctx = canvas.getContext('2d');
 let W = canvas.width = window.innerWidth;
 let H = canvas.height = window.innerHeight;
 
-const kite = {x:80, y:H/2, vy:0, w:40, h:40};
+const kite = {x:80, y:H/2, vy:0, w:40, h:40, angle:0};
 const gravity = 0.5;
 const lift = -10;
 let obstacles = [];
@@ -50,8 +56,12 @@ let frame = 0;
 let score = 0;
 let gameOverFlag = false;
 let gameStarted = false;
-
 let animationId = null;
+
+const clouds = [];
+for(let i=0;i<5;i++){
+  clouds.push({x:Math.random()*W, y:Math.random()*H/2, w:100, h:60, speed:0.3 + Math.random()*0.3});
+}
 
 const scoreEl = document.getElementById('score');
 const overlay = document.getElementById('overlay');
@@ -59,10 +69,33 @@ const overlayTitle = document.getElementById('overlayTitle');
 const overlayText = document.getElementById('overlayText');
 const startBtn = document.getElementById('startBtn');
 const shareBtn = document.getElementById('shareBtn');
+const leaderboardDiv = document.getElementById('leaderboard');
 
-function resetGame() {
-    kite.y = H/2;
-    kite.vy = 0;
+const jumpSound = document.getElementById('jumpSound');
+const pointSound = document.getElementById('pointSound');
+const crashSound = document.getElementById('crashSound');
+
+function getLeaderboard(){
+  let data = JSON.parse(localStorage.getItem("kiteLeaderboard")||"[]");
+  return data;
+}
+
+function updateLeaderboard(score){
+  let data = getLeaderboard();
+  data.push(score);
+  data.sort((a,b)=>b-a);
+  data = data.slice(0,5);
+  localStorage.setItem("kiteLeaderboard", JSON.stringify(data));
+  return data;
+}
+
+function displayLeaderboard(){
+  const top = getLeaderboard();
+  leaderboardDiv.innerHTML = "<b>Top Scores:</b><br>"+top.map((s,i)=>`${i+1}. ${s}`).join("<br>");
+}
+
+function resetGame(){
+    kite.y = H/2; kite.vy = 0; kite.angle = 0;
     obstacles = [];
     frame = 0;
     score = 0;
@@ -75,10 +108,11 @@ function resetGame() {
     startBtn.textContent = 'Start Game';
     startBtn.style.display = 'inline-block';
     shareBtn.style.display = 'none';
+    displayLeaderboard();
     if(animationId) cancelAnimationFrame(animationId);
 }
 
-function startGame() {
+function startGame(){
     gameStarted = true;
     overlay.style.display = 'none';
     kite.vy = 0;
@@ -95,17 +129,18 @@ shareBtn.addEventListener('click', ()=>{
     window.open(`https://x.com/intent/tweet?text=${text}`, '_blank', 'noopener');
 });
 
-function spawnObstacle() {
+function spawnObstacle(){
     const gapY = Math.random() * (H - gapHeight - 100) + 50;
     obstacles.push({x: W, gapY: gapY, passed: false});
 }
 
-function update() {
+function update(){
     if(gameOverFlag || !gameStarted) return;
 
     frame++;
     kite.vy += gravity;
     kite.y += kite.vy;
+    kite.angle = Math.min(kite.vy * 2, 25);
 
     if(frame % 90 === 0) spawnObstacle();
 
@@ -126,88 +161,96 @@ function update() {
             score++;
             obs.passed = true;
             scoreEl.textContent = score;
+            pointSound.currentTime=0; pointSound.play();
         }
     });
 
     obstacles = obstacles.filter(obs => obs.x + obstacleWidth > 0);
+
+    // Move clouds
+    clouds.forEach(c=>{ 
+        c.x -= c.speed; 
+        if(c.x + c.w <0) c.x = W + Math.random()*200; 
+    });
 }
 
-function drawKite() {
+function drawBackground(){
+    ctx.fillStyle="#87CEEB";
+    ctx.fillRect(0,0,W,H);
+
+    clouds.forEach(c=>{
+        ctx.fillStyle="rgba(255,255,255,0.8)";
+        ctx.beginPath();
+        ctx.ellipse(c.x, c.y, c.w/2, c.h/2,0,0,2*Math.PI);
+        ctx.fill();
+    });
+}
+
+function drawKite(){
     ctx.save();
+    ctx.translate(kite.x + kite.w/2, kite.y + kite.h/2);
+    ctx.rotate(kite.angle * Math.PI / 180);
     ctx.font = kite.h + "px serif";
-    ctx.fillText("🪁", kite.x, kite.y + kite.h * 0.8);
+    ctx.textAlign="center";
+    ctx.fillText("🪁",0,kite.h*0.3);
     ctx.restore();
 }
 
-function drawObstacles() {
+function drawObstacles(){
     obstacles.forEach(obs => {
         // Top
         ctx.fillStyle = "rgba(255,255,255,0.7)";
-        ctx.fillRect(obs.x, 0, obstacleWidth, obs.gapY);
-        ctx.fillStyle = "#0288d1";
-        ctx.font = "20px Arial";
-        ctx.textAlign = "center";
-        for(let y=20; y<obs.gapY; y+=40){
-            ctx.fillText("KiteAI", obs.x + obstacleWidth/2, y);
+        ctx.fillRect(obs.x,0,obstacleWidth,obs.gapY);
+        ctx.fillStyle="#FF5722";
+        ctx.font="bold 20px Arial";
+        ctx.textAlign="center";
+        for(let y=30;y<obs.gapY;y+=40){
+            ctx.fillText("KiteAI", obs.x+obstacleWidth/2, y);
         }
 
         // Bottom
         ctx.fillStyle = "rgba(255,255,255,0.7)";
-        ctx.fillRect(obs.x, obs.gapY + gapHeight, obstacleWidth, H - (obs.gapY + gapHeight));
-        ctx.fillStyle = "#0288d1";
-        for(let y=obs.gapY + gapHeight + 20; y<H; y+=40){
-            ctx.fillText("KiteAI", obs.x + obstacleWidth/2, y);
+        ctx.fillRect(obs.x, obs.gapY+gapHeight, obstacleWidth, H-(obs.gapY+gapHeight));
+        ctx.fillStyle="#FF5722";
+        for(let y=obs.gapY+gapHeight+30;y<H;y+=40){
+            ctx.fillText("KiteAI", obs.x+obstacleWidth/2, y);
         }
     });
 }
 
-function drawBackground() {
-    const grad = ctx.createLinearGradient(0,0,0,H);
-    grad.addColorStop(0,"#4fc3f7");
-    grad.addColorStop(1,"#0288d1");
-    ctx.fillStyle = grad;
-    ctx.fillRect(0,0,W,H);
-}
-
-function draw() {
+function draw(){
     drawBackground();
     drawObstacles();
     drawKite();
 }
 
-function gameLoop() {
+function gameLoop(){
     if(gameOverFlag) return;
     update();
     draw();
-    animationId = requestAnimationFrame(gameLoop);
+    animationId=requestAnimationFrame(gameLoop);
 }
 
-function endGame() {
-    gameOverFlag = true;
-    overlay.style.display = 'flex';
-    overlayTitle.textContent = 'Game Over! 🪁';
-    overlayText.innerHTML = `Score: ${score}<br><br>
+function endGame(){
+    gameOverFlag=true;
+    overlay.style.display='flex';
+    overlayTitle.textContent='Game Over! 🪁';
+    overlayText.innerHTML=`Score: ${score}<br>Top Score: ${Math.max(...getLeaderboard(),score)}<br><br>
     CEO / Co-founder: @ChiZhangData<br>
     CTO / Co-founder: @scottshics<br>
     Official account: @GoKiteAI<br>
     Made by @Vikash1234Singh`;
-    startBtn.textContent = 'Restart';
-    startBtn.style.display = 'inline-block';
-    shareBtn.style.display = 'inline-block';
+    startBtn.textContent='Restart';
+    startBtn.style.display='inline-block';
+    shareBtn.style.display='inline-block';
+    crashSound.currentTime=0; crashSound.play();
+    updateLeaderboard(score);
+    displayLeaderboard();
 }
 
-window.addEventListener('resize', ()=>{
-    W = canvas.width = window.innerWidth;
-    H = canvas.height = window.innerHeight;
-});
-
-window.addEventListener('touchstart', ()=>{
-    if(!gameStarted) startGame(); else kite.vy = lift;
-});
-
-window.addEventListener('mousedown', ()=>{
-    if(!gameStarted) startGame(); else kite.vy = lift;
-});
+window.addEventListener("resize", ()=>{ W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight; });
+window.addEventListener('touchstart', ()=>{ if(!gameStarted) startGame(); else { kite.vy=lift; jumpSound.currentTime=0; jumpSound.play(); }});
+window.addEventListener('mousedown', ()=>{ if(!gameStarted) startGame(); else { kite.vy=lift; jumpSound.currentTime=0; jumpSound.play(); }});
 
 resetGame();
 </script>
