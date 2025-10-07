@@ -56,7 +56,7 @@ let gameOverFlag = false;
 let gameStarted = false;
 let animationId = null;
 
-// Multi-color clouds
+// Clouds
 const cloudColors = ["#FFFFFF","#F0F0F0","#FFE0E0","#E0F7FA"];
 const clouds=[];
 for(let i=0;i<6;i++){
@@ -76,9 +76,9 @@ for(let i=0;i<5;i++){
     x:Math.random()*W,
     y:Math.random()*H/2,
     speed:1 + Math.random()*1,
-    size:5+Math.random()*5
+    size:6+Math.random()*4
   });
-});
+}
 
 // Particles
 const particles=[];
@@ -111,6 +111,7 @@ function resetGame(){
 }
 
 function startGame(){
+    if(gameStarted) return; // Prevent double start
     gameStarted=true;
     overlay.style.display='none';
     kite.vy=0;
@@ -130,6 +131,7 @@ function spawnObstacle(){
 }
 
 function createParticles(){
+    if(particles.length>=100) return;
     for(let i=0;i<5;i++){
         particles.push({x:kite.x, y:kite.y, vx:(Math.random()-0.5)*2, vy:Math.random()*-2, alpha:1});
     }
@@ -178,7 +180,7 @@ function update(){
 
     obstacles = obstacles.filter(obs=>obs.x+obstacleWidth>0);
 
-    // Move clouds
+    // Clouds movement
     clouds.forEach(c=>{
         c.x -= c.speed*2;
         if(c.x+150<0){
@@ -187,7 +189,7 @@ function update(){
         }
     });
 
-    // Move birds
+    // Birds movement
     birds.forEach(b=>{
         b.x += b.speed;
         if(b.x-b.size>W) b.x=-10;
@@ -207,17 +209,14 @@ function drawCloud(ctx,x,y,scale,color){
 }
 
 function drawBackground(){
-    // Sky gradient
     const grad=ctx.createLinearGradient(0,0,0,H);
     grad.addColorStop(0,"#87CEEB");
     grad.addColorStop(1,"#a0d8ff");
     ctx.fillStyle=grad;
     ctx.fillRect(0,0,W,H);
 
-    // Clouds
     clouds.forEach(c=> drawCloud(ctx,c.x,c.y,c.scale,c.color));
 
-    // Birds
     birds.forEach(b=>{
         ctx.strokeStyle="#000"; ctx.lineWidth=2;
         ctx.beginPath();
@@ -228,7 +227,6 @@ function drawBackground(){
         ctx.stroke();
     });
 
-    // Particles
     particles.forEach(p=>{
         ctx.fillStyle=`rgba(255,255,255,${p.alpha})`;
         ctx.beginPath();
@@ -290,8 +288,14 @@ function endGame(){
 }
 
 window.addEventListener("resize",()=>{W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;});
-window.addEventListener('touchstart', ()=>{ if(!gameStarted) startGame(); else { kite.vy=lift; jumpSound.currentTime=0; jumpSound.play(); particles.push({x:kite.x,y:kite.y,vx:Math.random()-0.5,vy:-2,alpha:1}); }});
-window.addEventListener('mousedown', ()=>{ if(!gameStarted) startGame(); else { kite.vy=lift; jumpSound.currentTime=0; jumpSound.play(); particles.push({x:kite.x,y:kite.y,vx:Math.random()-0.5,vy:-2,alpha:1}); }});
+window.addEventListener('touchstart', ()=>{ 
+    if(!gameStarted) startGame(); 
+    else { kite.vy=lift; jumpSound.currentTime=0; jumpSound.play(); createParticles(); } 
+});
+window.addEventListener('mousedown', ()=>{ 
+    if(!gameStarted) startGame(); 
+    else { kite.vy=lift; jumpSound.currentTime=0; jumpSound.play(); createParticles(); } 
+});
 
 resetGame();
 </script>
