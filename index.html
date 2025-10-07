@@ -8,12 +8,12 @@
 html, body { margin:0; padding:0; overflow:hidden; font-family: Arial, sans-serif; }
 canvas { display:block; }
 #score { position:absolute; top:20px; left:50%; transform:translateX(-50%); font-size:32px; font-weight:bold; color:#fff; text-shadow:2px 2px 4px #000; z-index:10; }
-#modal {
+#overlay {
   position:fixed; top:0; left:0; right:0; bottom:0;
-  display:none; align-items:center; justify-content:center;
-  background:rgba(0,0,0,0.5); z-index:20;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(0,0,0,0.5); z-index:20; flex-direction:column;
 }
-#modalContent {
+#overlayContent {
   background:white; padding:20px; border-radius:12px; text-align:center; max-width:320px;
 }
 button { padding:10px 16px; margin:8px 4px 0 4px; font-size:16px; border:none; border-radius:8px; background:#fdd835; color:#212121; cursor:pointer; }
@@ -21,16 +21,17 @@ button { padding:10px 16px; margin:8px 4px 0 4px; font-size:16px; border:none; b
 </head>
 <body>
 <div id="score">0</div>
-<div id="modal">
-  <div id="modalContent">
-    <h2>Game Over!</h2>
-    <p id="finalScore">Score: 0</p>
-    <p id="hiddenFact">💡 Hidden GoKiteAI Fact: Creators fly higher with AI prompts!</p>
-    <button id="restartBtn">Play Again</button>
-    <button id="shareBtn">Share Score</button>
+
+<div id="overlay">
+  <div id="overlayContent">
+    <h2 id="overlayTitle">🪁 Kite Flight</h2>
+    <p id="overlayText">Tap or Click to Start</p>
+    <button id="startBtn">Start Game</button>
   </div>
 </div>
+
 <canvas id="gameCanvas"></canvas>
+
 <script>
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -47,12 +48,13 @@ const gapHeight = 180;
 let frame = 0;
 let score = 0;
 let gameOverFlag = false;
+let gameStarted = false;
 
 const scoreEl = document.getElementById('score');
-const modal = document.getElementById('modal');
-const finalScore = document.getElementById('finalScore');
-const restartBtn = document.getElementById('restartBtn');
-const shareBtn = document.getElementById('shareBtn');
+const overlay = document.getElementById('overlay');
+const overlayTitle = document.getElementById('overlayTitle');
+const overlayText = document.getElementById('overlayText');
+const startBtn = document.getElementById('startBtn');
 
 function resetGame() {
   kite.y = H/2; kite.vy = 0;
@@ -61,15 +63,21 @@ function resetGame() {
   score = 0;
   gameOverFlag = false;
   scoreEl.textContent = score;
-  modal.style.display = 'none';
+  overlay.style.display = 'flex';
+  overlayTitle.textContent = '🪁 Kite Flight';
+  overlayText.textContent = 'Tap or Click to Start';
+  startBtn.style.display = 'inline-block';
+}
+
+function startGame() {
+  gameStarted = true;
+  overlay.style.display = 'none';
   requestAnimationFrame(gameLoop);
 }
 
-restartBtn.addEventListener('click', resetGame);
-shareBtn.addEventListener('click', () => {
-  const text = encodeURIComponent(`I scored ${score} in Kite Flight! 🪁 #GoKiteFlight @GoKiteAI`);
-  window.open(`https://x.com/intent/tweet?text=${text}`, '_blank', 'noopener');
-});
+startBtn.addEventListener('click', startGame);
+window.addEventListener('touchstart', ()=>{ if(!gameStarted) startGame(); else kite.vy = lift; });
+window.addEventListener('mousedown', ()=>{ if(!gameStarted) startGame(); else kite.vy = lift; });
 
 function spawnObstacle() {
   const gapY = Math.random()*(H - gapHeight - 100)+50;
@@ -77,7 +85,7 @@ function spawnObstacle() {
 }
 
 function update() {
-  if(gameOverFlag) return;
+  if(gameOverFlag || !gameStarted) return;
 
   frame++;
   kite.vy += gravity;
@@ -85,10 +93,8 @@ function update() {
 
   if(frame % 90 === 0) spawnObstacle();
 
-  // move obstacles
   for(let obs of obstacles){ obs.x -= 4; }
 
-  // collision check
   for(let obs of obstacles){
     if(kite.x + kite.w > obs.x && kite.x < obs.x + obstacleWidth){
       if(kite.y < obs.gapY || kite.y + kite.h > obs.gapY + gapHeight){
@@ -99,7 +105,6 @@ function update() {
 
   if(kite.y + kite.h > H || kite.y < 0) endGame();
 
-  // scoring
   for(let obs of obstacles){
     if(!obs.passed && obs.x + obstacleWidth < kite.x){
       score++;
@@ -149,13 +154,18 @@ function gameLoop() {
 
 function endGame() {
   gameOverFlag = true;
-  finalScore.textContent = "Score: "+score;
-  modal.style.display = "flex";
+  overlay.style.display = 'flex';
+  overlayTitle.textContent = 'Game Over! 🪁';
+  overlayText.innerHTML = `Score: ${score}<br><br>
+  CEO / Co-founder: @ChiZhangData<br>
+  CTO / Co-founder: @scottshics<br>
+  Official account: @GoKiteAI<br>
+  Made by @Vikash1234Singh`;
+  startBtn.textContent = 'Restart';
+  startBtn.style.display = 'inline-block';
 }
 
 window.addEventListener("resize", ()=>{ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; });
-window.addEventListener("touchstart", ()=>{ kite.vy = lift; });
-window.addEventListener("mousedown", ()=>{ kite.vy = lift; });
 
 resetGame();
 </script>
