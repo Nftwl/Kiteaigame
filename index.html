@@ -11,13 +11,12 @@ canvas { display:block; }
 #overlay {
   position:fixed; top:0; left:0; right:0; bottom:0;
   display:flex; align-items:center; justify-content:center;
-  background:rgba(0,0,0,0.5); z-index:20; flex-direction:column;
+  background:rgba(0,0,0,0.6); z-index:20; flex-direction:column;
 }
 #overlayContent {
-  background:white; padding:20px; border-radius:12px; text-align:center; max-width:320px;
+  background:linear-gradient(145deg,#ffffff,#f0f0f0); padding:20px; border-radius:16px; text-align:center; max-width:320px; box-shadow:0 8px 20px rgba(0,0,0,0.3);
 }
-button { padding:10px 16px; margin:8px 4px 0 4px; font-size:16px; border:none; border-radius:8px; background:#fdd835; color:#212121; cursor:pointer; }
-#leaderboard { text-align:left; margin-top:8px; font-size:14px; color:#555; }
+button { padding:10px 16px; margin:8px 4px 0 4px; font-size:16px; border:none; border-radius:12px; background:#fdd835; color:#212121; cursor:pointer; font-weight:bold; box-shadow:0 4px 8px rgba(0,0,0,0.2); }
 </style>
 </head>
 <body>
@@ -29,7 +28,6 @@ button { padding:10px 16px; margin:8px 4px 0 4px; font-size:16px; border:none; b
     <p id="overlayText">Tap or Click to Start</p>
     <button id="startBtn">Start Game</button>
     <button id="shareBtn" style="display:none;">Share on X</button>
-    <div id="leaderboard"></div>
   </div>
 </div>
 
@@ -50,7 +48,7 @@ const kite = {x:80, y:H/2, vy:0, w:40, h:40, angle:0};
 const gravity = 0.5;
 const lift = -10;
 let obstacles = [];
-const obstacleWidth = 60;
+const obstacleWidth = 70; // bigger for visibility
 const gapHeight = 180;
 let frame = 0;
 let score = 0;
@@ -58,10 +56,14 @@ let gameOverFlag = false;
 let gameStarted = false;
 let animationId = null;
 
+// Clouds for background
 const clouds = [];
-for(let i=0;i<5;i++){
-  clouds.push({x:Math.random()*W, y:Math.random()*H/2, w:100, h:60, speed:0.3 + Math.random()*0.3});
+for(let i=0;i<6;i++){
+  clouds.push({x:Math.random()*W, y:Math.random()*H/2, w:100+Math.random()*50, h:50+Math.random()*30, speed:0.2 + Math.random()*0.3});
 }
+
+// Particles when jumping
+const particles = [];
 
 const scoreEl = document.getElementById('score');
 const overlay = document.getElementById('overlay');
@@ -69,69 +71,61 @@ const overlayTitle = document.getElementById('overlayTitle');
 const overlayText = document.getElementById('overlayText');
 const startBtn = document.getElementById('startBtn');
 const shareBtn = document.getElementById('shareBtn');
-const leaderboardDiv = document.getElementById('leaderboard');
 
 const jumpSound = document.getElementById('jumpSound');
 const pointSound = document.getElementById('pointSound');
 const crashSound = document.getElementById('crashSound');
 
-function getLeaderboard(){
-  let data = JSON.parse(localStorage.getItem("kiteLeaderboard")||"[]");
-  return data;
-}
-
-function updateLeaderboard(score){
-  let data = getLeaderboard();
-  data.push(score);
-  data.sort((a,b)=>b-a);
-  data = data.slice(0,5);
-  localStorage.setItem("kiteLeaderboard", JSON.stringify(data));
-  return data;
-}
-
-function displayLeaderboard(){
-  const top = getLeaderboard();
-  leaderboardDiv.innerHTML = "<b>Top Scores:</b><br>"+top.map((s,i)=>`${i+1}. ${s}`).join("<br>");
-}
-
 function resetGame(){
-    kite.y = H/2; kite.vy = 0; kite.angle = 0;
-    obstacles = [];
-    frame = 0;
-    score = 0;
-    gameOverFlag = false;
-    gameStarted = false;
-    scoreEl.textContent = score;
-    overlay.style.display = 'flex';
-    overlayTitle.textContent = '🪁 Kite Flight';
-    overlayText.textContent = 'Tap or Click to Start';
-    startBtn.textContent = 'Start Game';
-    startBtn.style.display = 'inline-block';
-    shareBtn.style.display = 'none';
-    displayLeaderboard();
+    kite.y = H/2; kite.vy = 0; kite.angle=0;
+    obstacles=[]; frame=0; score=0;
+    particles.length=0;
+    gameOverFlag=false;
+    gameStarted=false;
+    scoreEl.textContent=score;
+    overlay.style.display='flex';
+    overlayTitle.textContent='🪁 Kite Flight';
+    overlayText.textContent='Tap or Click to Start';
+    startBtn.textContent='Start Game';
+    startBtn.style.display='inline-block';
+    shareBtn.style.display='none';
     if(animationId) cancelAnimationFrame(animationId);
 }
 
 function startGame(){
-    gameStarted = true;
-    overlay.style.display = 'none';
-    kite.vy = 0;
-    animationId = requestAnimationFrame(gameLoop);
+    gameStarted=true;
+    overlay.style.display='none';
+    kite.vy=0;
+    animationId=requestAnimationFrame(gameLoop);
 }
 
-startBtn.addEventListener('click', ()=>{
-    resetGame();
-    startGame();
-});
+startBtn.addEventListener('click', ()=>{ resetGame(); startGame(); });
 
 shareBtn.addEventListener('click', ()=>{
     const text = encodeURIComponent(`I scored ${score} in Kite Flight! 🪁 #GoKiteFlight @GoKiteAI`);
-    window.open(`https://x.com/intent/tweet?text=${text}`, '_blank', 'noopener');
+    window.open(`https://x.com/intent/tweet?text=${text}`,'_blank','noopener');
 });
 
 function spawnObstacle(){
-    const gapY = Math.random() * (H - gapHeight - 100) + 50;
-    obstacles.push({x: W, gapY: gapY, passed: false});
+    const gapY = Math.random()*(H-gapHeight-100)+50;
+    obstacles.push({x:W, gapY:gapY, passed:false});
+}
+
+function createParticles(){
+    for(let i=0;i<5;i++){
+        particles.push({x:kite.x, y:kite.y, vx:(Math.random()-0.5)*2, vy:Math.random()*-2, alpha:1});
+    }
+}
+
+function updateParticles(){
+    particles.forEach(p=>{
+        p.x+=p.vx;
+        p.y+=p.vy;
+        p.alpha-=0.02;
+    });
+    for(let i=particles.length-1;i>=0;i--){
+        if(particles[i].alpha<=0) particles.splice(i,1);
+    }
 }
 
 function update(){
@@ -140,81 +134,86 @@ function update(){
     frame++;
     kite.vy += gravity;
     kite.y += kite.vy;
-    kite.angle = Math.min(kite.vy * 2, 25);
+    kite.angle = Math.min(kite.vy*2,25);
 
-    if(frame % 90 === 0) spawnObstacle();
+    if(frame%90===0) spawnObstacle();
 
-    obstacles.forEach(obs => { obs.x -= 4; });
+    obstacles.forEach(obs=>{ obs.x-=4; });
 
     for(let obs of obstacles){
-        if(kite.x + kite.w > obs.x && kite.x < obs.x + obstacleWidth){
-            if(kite.y < obs.gapY || kite.y + kite.h > obs.gapY + gapHeight){
+        if(kite.x+kite.w>obs.x && kite.x<obs.x+obstacleWidth){
+            if(kite.y<obs.gapY || kite.y+kite.h>obs.gapY+gapHeight){
                 endGame();
             }
         }
     }
 
-    if(kite.y + kite.h > H || kite.y < 0) endGame();
+    if(kite.y+kite.h>H || kite.y<0) endGame();
 
-    obstacles.forEach(obs => {
-        if(!obs.passed && obs.x + obstacleWidth < kite.x){
-            score++;
-            obs.passed = true;
-            scoreEl.textContent = score;
+    obstacles.forEach(obs=>{
+        if(!obs.passed && obs.x+obstacleWidth<kite.x){
+            score++; obs.passed=true;
+            scoreEl.textContent=score;
             pointSound.currentTime=0; pointSound.play();
         }
     });
 
-    obstacles = obstacles.filter(obs => obs.x + obstacleWidth > 0);
+    obstacles = obstacles.filter(obs=>obs.x+obstacleWidth>0);
 
-    // Move clouds
-    clouds.forEach(c=>{ 
-        c.x -= c.speed; 
-        if(c.x + c.w <0) c.x = W + Math.random()*200; 
+    clouds.forEach(c=>{
+        c.x -= c.speed;
+        if(c.x+c.w<0) c.x=W+Math.random()*200;
     });
+
+    updateParticles();
 }
 
 function drawBackground(){
-    ctx.fillStyle="#87CEEB";
+    // Gradient sky
+    const grad=ctx.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0,"#87CEEB");
+    grad.addColorStop(1,"#a0d8ff");
+    ctx.fillStyle=grad;
     ctx.fillRect(0,0,W,H);
 
+    // Clouds
     clouds.forEach(c=>{
-        ctx.fillStyle="rgba(255,255,255,0.8)";
+        ctx.fillStyle="rgba(255,255,255,0.85)";
         ctx.beginPath();
-        ctx.ellipse(c.x, c.y, c.w/2, c.h/2,0,0,2*Math.PI);
+        ctx.ellipse(c.x,c.y,c.w/2,c.h/2,0,0,2*Math.PI);
+        ctx.fill();
+    });
+
+    // Particles
+    particles.forEach(p=>{
+        ctx.fillStyle=`rgba(255,255,255,${p.alpha})`;
+        ctx.beginPath();
+        ctx.arc(p.x,p.y,3,0,2*Math.PI);
         ctx.fill();
     });
 }
 
 function drawKite(){
     ctx.save();
-    ctx.translate(kite.x + kite.w/2, kite.y + kite.h/2);
-    ctx.rotate(kite.angle * Math.PI / 180);
-    ctx.font = kite.h + "px serif";
+    ctx.translate(kite.x+kite.w/2, kite.y+kite.h/2);
+    ctx.rotate(kite.angle*Math.PI/180);
+    ctx.font=kite.h+"px serif";
     ctx.textAlign="center";
     ctx.fillText("🪁",0,kite.h*0.3);
     ctx.restore();
 }
 
 function drawObstacles(){
-    obstacles.forEach(obs => {
-        // Top
-        ctx.fillStyle = "rgba(255,255,255,0.7)";
+    obstacles.forEach(obs=>{
+        ctx.fillStyle="#1976D2";
         ctx.fillRect(obs.x,0,obstacleWidth,obs.gapY);
-        ctx.fillStyle="#FF5722";
+        ctx.fillRect(obs.x,obs.gapY+gapHeight,obstacleWidth,H-(obs.gapY+gapHeight));
+
+        ctx.fillStyle="#FFC107";
         ctx.font="bold 20px Arial";
         ctx.textAlign="center";
-        for(let y=30;y<obs.gapY;y+=40){
-            ctx.fillText("KiteAI", obs.x+obstacleWidth/2, y);
-        }
-
-        // Bottom
-        ctx.fillStyle = "rgba(255,255,255,0.7)";
-        ctx.fillRect(obs.x, obs.gapY+gapHeight, obstacleWidth, H-(obs.gapY+gapHeight));
-        ctx.fillStyle="#FF5722";
-        for(let y=obs.gapY+gapHeight+30;y<H;y+=40){
-            ctx.fillText("KiteAI", obs.x+obstacleWidth/2, y);
-        }
+        for(let y=30;y<obs.gapY;y+=40) ctx.fillText("KiteAI", obs.x+obstacleWidth/2, y);
+        for(let y=obs.gapY+gapHeight+30;y<H;y+=40) ctx.fillText("KiteAI", obs.x+obstacleWidth/2, y);
     });
 }
 
@@ -235,7 +234,7 @@ function endGame(){
     gameOverFlag=true;
     overlay.style.display='flex';
     overlayTitle.textContent='Game Over! 🪁';
-    overlayText.innerHTML=`Score: ${score}<br>Top Score: ${Math.max(...getLeaderboard(),score)}<br><br>
+    overlayText.innerHTML=`Score: ${score}<br><br>
     CEO / Co-founder: @ChiZhangData<br>
     CTO / Co-founder: @scottshics<br>
     Official account: @GoKiteAI<br>
@@ -244,13 +243,11 @@ function endGame(){
     startBtn.style.display='inline-block';
     shareBtn.style.display='inline-block';
     crashSound.currentTime=0; crashSound.play();
-    updateLeaderboard(score);
-    displayLeaderboard();
 }
 
-window.addEventListener("resize", ()=>{ W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight; });
-window.addEventListener('touchstart', ()=>{ if(!gameStarted) startGame(); else { kite.vy=lift; jumpSound.currentTime=0; jumpSound.play(); }});
-window.addEventListener('mousedown', ()=>{ if(!gameStarted) startGame(); else { kite.vy=lift; jumpSound.currentTime=0; jumpSound.play(); }});
+window.addEventListener("resize",()=>{W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;});
+window.addEventListener('touchstart', ()=>{ if(!gameStarted) startGame(); else { kite.vy=lift; jumpSound.currentTime=0; jumpSound.play(); createParticles(); }});
+window.addEventListener('mousedown', ()=>{ if(!gameStarted) startGame(); else { kite.vy=lift; jumpSound.currentTime=0; jumpSound.play(); createParticles(); }});
 
 resetGame();
 </script>
