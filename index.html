@@ -56,7 +56,7 @@ let gameOverFlag = false;
 let gameStarted = false;
 let animationId = null;
 
-// Clouds
+// Clouds ☁️ multi-colored
 const cloudColors = ["#FFFFFF","#F0F0F0","#FFE0E0","#E0F7FA"];
 const clouds=[];
 for(let i=0;i<6;i++){
@@ -66,17 +66,6 @@ for(let i=0;i<6;i++){
     scale:0.5+Math.random()*0.5,
     speed:0.2 + Math.random()*0.3,
     color: cloudColors[Math.floor(Math.random()*cloudColors.length)]
-  });
-}
-
-// Birds
-const birds=[];
-for(let i=0;i<5;i++){
-  birds.push({
-    x:Math.random()*W,
-    y:Math.random()*H/2,
-    speed:1 + Math.random()*1,
-    size:6+Math.random()*4
   });
 }
 
@@ -111,7 +100,7 @@ function resetGame(){
 }
 
 function startGame(){
-    if(gameStarted) return; // Prevent double start
+    if(gameStarted) return;
     gameStarted=true;
     overlay.style.display='none';
     kite.vy=0;
@@ -189,12 +178,6 @@ function update(){
         }
     });
 
-    // Birds movement
-    birds.forEach(b=>{
-        b.x += b.speed;
-        if(b.x-b.size>W) b.x=-10;
-    });
-
     updateParticles();
 }
 
@@ -217,16 +200,6 @@ function drawBackground(){
 
     clouds.forEach(c=> drawCloud(ctx,c.x,c.y,c.scale,c.color));
 
-    birds.forEach(b=>{
-        ctx.strokeStyle="#000"; ctx.lineWidth=2;
-        ctx.beginPath();
-        ctx.moveTo(b.x,b.y);
-        ctx.lineTo(b.x-b.size,b.y-b.size/2);
-        ctx.moveTo(b.x,b.y);
-        ctx.lineTo(b.x-b.size,b.y+b.size/2);
-        ctx.stroke();
-    });
-
     particles.forEach(p=>{
         ctx.fillStyle=`rgba(255,255,255,${p.alpha})`;
         ctx.beginPath();
@@ -245,17 +218,52 @@ function drawKite(){
     ctx.restore();
 }
 
+// Brick pillars with vertical text
 function drawObstacles(){
     obstacles.forEach(obs=>{
-        ctx.fillStyle="#1976D2";
+        // Upper pillar
+        ctx.fillStyle="#8B4513";
         ctx.fillRect(obs.x,0,obstacleWidth,obs.gapY);
+
+        ctx.strokeStyle="#A0522D";
+        ctx.lineWidth=2;
+        for(let y=0;y<obs.gapY;y+=20){
+            ctx.beginPath();
+            ctx.moveTo(obs.x,y);
+            ctx.lineTo(obs.x+obstacleWidth,y);
+            ctx.stroke();
+        }
+
+        // Upper vertical KITE AI
+        ctx.fillStyle="#FFD700";
+        ctx.font="bold 18px Arial";
+        ctx.textAlign="center";
+        const upperText = ["K","I","T","E","A","I"];
+        const stepTop = (obs.gapY-20)/upperText.length;
+        for(let i=0;i<upperText.length;i++){
+            ctx.fillText(upperText[i], obs.x+obstacleWidth/2, 10 + i*stepTop);
+        }
+
+        // Lower pillar
+        ctx.fillStyle="#8B4513";
         ctx.fillRect(obs.x,obs.gapY+gapHeight,obstacleWidth,H-(obs.gapY+gapHeight));
 
-        ctx.fillStyle="#FFC107";
-        ctx.font="bold 20px Arial";
-        ctx.textAlign="center";
-        for(let y=30;y<obs.gapY;y+=40) ctx.fillText("KiteAI", obs.x+obstacleWidth/2, y);
-        for(let y=obs.gapY+gapHeight+30;y<H;y+=40) ctx.fillText("KiteAI", obs.x+obstacleWidth/2, y);
+        // Brick lines bottom
+        for(let y=obs.gapY+gapHeight;y<H;y+=20){
+            ctx.beginPath();
+            ctx.moveTo(obs.x,y);
+            ctx.lineTo(obs.x+obstacleWidth,y);
+            ctx.stroke();
+        }
+
+        // Lower vertical SUPPORT
+        ctx.fillStyle="#FFD700";
+        const lowerText = ["S","U","P","P","O","R","T"];
+        const lowerHeight = H-(obs.gapY+gapHeight)-20;
+        const stepBottom = lowerHeight/lowerText.length;
+        for(let i=0;i<lowerText.length;i++){
+            ctx.fillText(lowerText[i], obs.x+obstacleWidth/2, obs.gapY+gapHeight + 10 + i*stepBottom);
+        }
     });
 }
 
@@ -280,7 +288,8 @@ function endGame(){
     CEO / Co-founder: @ChiZhangData<br>
     CTO / Co-founder: @scottshics<br>
     Official account: @GoKiteAI<br>
-    Made by @Vikash1234Singh`;
+    Made by @Vikash1234Singh<br>
+    “Kite AI: Wind Runner” Event`;
     startBtn.textContent='Restart';
     startBtn.style.display='inline-block';
     shareBtn.style.display='inline-block';
