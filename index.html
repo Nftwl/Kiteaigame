@@ -217,13 +217,13 @@ function drawKite(){
     ctx.restore();
 }
 
-// Professional pillar with horizontal KITEAI
+// Professional pillars with horizontal KITEAI
 function drawObstacles(){
-    obstacles.forEach(obs=>{
-        const brickHeight = 30; 
-        const brickWidth = obstacleWidth;
-        const text = "KITEAI";
+    const brickHeight = 30; 
+    const brickWidth = obstacleWidth;
+    const text = "KITEAI";
 
+    obstacles.forEach(obs=>{
         // Upper pillar
         for(let y=0; y<obs.gapY; y+=brickHeight){
             const grad = ctx.createLinearGradient(obs.x, y, obs.x+brickWidth, y+brickHeight);
