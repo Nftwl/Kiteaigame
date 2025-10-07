@@ -50,7 +50,8 @@ let frame = 0;
 let score = 0;
 let gameOverFlag = false;
 let gameStarted = false;
-let loopId = null;
+
+let animationId = null;
 
 const scoreEl = document.getElementById('score');
 const overlay = document.getElementById('overlay');
@@ -60,148 +61,153 @@ const startBtn = document.getElementById('startBtn');
 const shareBtn = document.getElementById('shareBtn');
 
 function resetGame() {
-  kite.y = H/2; kite.vy = 0;
-  obstacles = [];
-  frame = 0;
-  score = 0;
-  gameOverFlag = false;
-  gameStarted = false;
-  scoreEl.textContent = score;
-  overlay.style.display = 'flex';
-  overlayTitle.textContent = '🪁 Kite Flight';
-  overlayText.textContent = 'Tap or Click to Start';
-  startBtn.textContent = 'Start Game';
-  startBtn.style.display = 'inline-block';
-  shareBtn.style.display = 'none';
-  cancelAnimationFrame(loopId); // Stop any previous loop
+    kite.y = H/2;
+    kite.vy = 0;
+    obstacles = [];
+    frame = 0;
+    score = 0;
+    gameOverFlag = false;
+    gameStarted = false;
+    scoreEl.textContent = score;
+    overlay.style.display = 'flex';
+    overlayTitle.textContent = '🪁 Kite Flight';
+    overlayText.textContent = 'Tap or Click to Start';
+    startBtn.textContent = 'Start Game';
+    startBtn.style.display = 'inline-block';
+    shareBtn.style.display = 'none';
+    if(animationId) cancelAnimationFrame(animationId);
 }
 
 function startGame() {
-  gameStarted = true;
-  overlay.style.display = 'none';
-  loopId = requestAnimationFrame(gameLoop);
+    gameStarted = true;
+    overlay.style.display = 'none';
+    kite.vy = 0;
+    animationId = requestAnimationFrame(gameLoop);
 }
 
 startBtn.addEventListener('click', ()=>{
-  startGame();
+    resetGame();
+    startGame();
 });
 
 shareBtn.addEventListener('click', ()=>{
-  const text = encodeURIComponent(`I scored ${score} in Kite Flight! 🪁 #GoKiteFlight @GoKiteAI`);
-  window.open(`https://x.com/intent/tweet?text=${text}`, '_blank', 'noopener');
-});
-
-window.addEventListener('touchstart', ()=>{ 
-  if(!gameStarted) startGame(); 
-  else kite.vy = lift; 
-});
-window.addEventListener('mousedown', ()=>{ 
-  if(!gameStarted) startGame(); 
-  else kite.vy = lift; 
+    const text = encodeURIComponent(`I scored ${score} in Kite Flight! 🪁 #GoKiteFlight @GoKiteAI`);
+    window.open(`https://x.com/intent/tweet?text=${text}`, '_blank', 'noopener');
 });
 
 function spawnObstacle() {
-  const gapY = Math.random()*(H - gapHeight - 100)+50;
-  obstacles.push({x:W, gapY, passed:false});
+    const gapY = Math.random() * (H - gapHeight - 100) + 50;
+    obstacles.push({x: W, gapY: gapY, passed: false});
 }
 
 function update() {
-  if(gameOverFlag || !gameStarted) return;
+    if(gameOverFlag || !gameStarted) return;
 
-  frame++;
-  kite.vy += gravity;
-  kite.y += kite.vy;
+    frame++;
+    kite.vy += gravity;
+    kite.y += kite.vy;
 
-  if(frame % 90 === 0) spawnObstacle();
+    if(frame % 90 === 0) spawnObstacle();
 
-  for(let obs of obstacles){ obs.x -= 4; }
+    obstacles.forEach(obs => { obs.x -= 4; });
 
-  for(let obs of obstacles){
-    if(kite.x + kite.w > obs.x && kite.x < obs.x + obstacleWidth){
-      if(kite.y < obs.gapY || kite.y + kite.h > obs.gapY + gapHeight){
-        endGame();
-      }
+    for(let obs of obstacles){
+        if(kite.x + kite.w > obs.x && kite.x < obs.x + obstacleWidth){
+            if(kite.y < obs.gapY || kite.y + kite.h > obs.gapY + gapHeight){
+                endGame();
+            }
+        }
     }
-  }
 
-  if(kite.y + kite.h > H || kite.y < 0) endGame();
+    if(kite.y + kite.h > H || kite.y < 0) endGame();
 
-  for(let obs of obstacles){
-    if(!obs.passed && obs.x + obstacleWidth < kite.x){
-      score++;
-      obs.passed = true;
-      scoreEl.textContent = score;
-    }
-  }
+    obstacles.forEach(obs => {
+        if(!obs.passed && obs.x + obstacleWidth < kite.x){
+            score++;
+            obs.passed = true;
+            scoreEl.textContent = score;
+        }
+    });
 
-  obstacles = obstacles.filter(obs => obs.x + obstacleWidth > 0);
+    obstacles = obstacles.filter(obs => obs.x + obstacleWidth > 0);
 }
 
 function drawKite() {
-  ctx.save();
-  ctx.font = kite.h+"px serif";
-  ctx.fillText("🪁", kite.x, kite.y + kite.h*0.8);
-  ctx.restore();
+    ctx.save();
+    ctx.font = kite.h + "px serif";
+    ctx.fillText("🪁", kite.x, kite.y + kite.h * 0.8);
+    ctx.restore();
 }
 
 function drawObstacles() {
-  for(let obs of obstacles){
-    // Top obstacle
-    ctx.fillStyle = "rgba(255,255,255,0.7)";
-    ctx.fillRect(obs.x, 0, obstacleWidth, obs.gapY);
-    ctx.fillStyle = "#0288d1";
-    ctx.font = "20px Arial";
-    ctx.textAlign = "center";
-    for(let y=20; y<obs.gapY; y+=40){
-      ctx.fillText("KiteAI", obs.x + obstacleWidth/2, y);
-    }
+    obstacles.forEach(obs => {
+        // Top
+        ctx.fillStyle = "rgba(255,255,255,0.7)";
+        ctx.fillRect(obs.x, 0, obstacleWidth, obs.gapY);
+        ctx.fillStyle = "#0288d1";
+        ctx.font = "20px Arial";
+        ctx.textAlign = "center";
+        for(let y=20; y<obs.gapY; y+=40){
+            ctx.fillText("KiteAI", obs.x + obstacleWidth/2, y);
+        }
 
-    // Bottom obstacle
-    ctx.fillStyle = "rgba(255,255,255,0.7)";
-    ctx.fillRect(obs.x, obs.gapY + gapHeight, obstacleWidth, H - (obs.gapY + gapHeight));
-    ctx.fillStyle = "#0288d1";
-    for(let y=obs.gapY + gapHeight + 20; y<H; y+=40){
-      ctx.fillText("KiteAI", obs.x + obstacleWidth/2, y);
-    }
-  }
+        // Bottom
+        ctx.fillStyle = "rgba(255,255,255,0.7)";
+        ctx.fillRect(obs.x, obs.gapY + gapHeight, obstacleWidth, H - (obs.gapY + gapHeight));
+        ctx.fillStyle = "#0288d1";
+        for(let y=obs.gapY + gapHeight + 20; y<H; y+=40){
+            ctx.fillText("KiteAI", obs.x + obstacleWidth/2, y);
+        }
+    });
 }
 
 function drawBackground() {
-  const grad = ctx.createLinearGradient(0,0,0,H);
-  grad.addColorStop(0,"#4fc3f7");
-  grad.addColorStop(1,"#0288d1");
-  ctx.fillStyle = grad;
-  ctx.fillRect(0,0,W,H);
+    const grad = ctx.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0,"#4fc3f7");
+    grad.addColorStop(1,"#0288d1");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0,0,W,H);
 }
 
 function draw() {
-  drawBackground();
-  drawObstacles();
-  drawKite();
+    drawBackground();
+    drawObstacles();
+    drawKite();
 }
 
 function gameLoop() {
-  if(gameOverFlag) return;
-  update();
-  draw();
-  loopId = requestAnimationFrame(gameLoop);
+    if(gameOverFlag) return;
+    update();
+    draw();
+    animationId = requestAnimationFrame(gameLoop);
 }
 
 function endGame() {
-  gameOverFlag = true;
-  overlay.style.display = 'flex';
-  overlayTitle.textContent = 'Game Over! 🪁';
-  overlayText.innerHTML = `Score: ${score}<br><br>
-  CEO / Co-founder: @ChiZhangData<br>
-  CTO / Co-founder: @scottshics<br>
-  Official account: @GoKiteAI<br>
-  Made by @Vikash1234Singh`;
-  startBtn.textContent = 'Restart';
-  startBtn.style.display = 'inline-block';
-  shareBtn.style.display = 'inline-block';
+    gameOverFlag = true;
+    overlay.style.display = 'flex';
+    overlayTitle.textContent = 'Game Over! 🪁';
+    overlayText.innerHTML = `Score: ${score}<br><br>
+    CEO / Co-founder: @ChiZhangData<br>
+    CTO / Co-founder: @scottshics<br>
+    Official account: @GoKiteAI<br>
+    Made by @Vikash1234Singh`;
+    startBtn.textContent = 'Restart';
+    startBtn.style.display = 'inline-block';
+    shareBtn.style.display = 'inline-block';
 }
 
-window.addEventListener("resize", ()=>{ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; });
+window.addEventListener('resize', ()=>{
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+});
+
+window.addEventListener('touchstart', ()=>{
+    if(!gameStarted) startGame(); else kite.vy = lift;
+});
+
+window.addEventListener('mousedown', ()=>{
+    if(!gameStarted) startGame(); else kite.vy = lift;
+});
 
 resetGame();
 </script>
