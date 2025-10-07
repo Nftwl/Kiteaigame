@@ -48,7 +48,7 @@ const kite = {x:80, y:H/2, vy:0, w:40, h:40, angle:0};
 const gravity = 0.5;
 const lift = -10;
 let obstacles = [];
-const obstacleWidth = 70; // bigger for visibility
+const obstacleWidth = 70; 
 const gapHeight = 180;
 let frame = 0;
 let score = 0;
@@ -56,14 +56,32 @@ let gameOverFlag = false;
 let gameStarted = false;
 let animationId = null;
 
-// Clouds for background
-const clouds = [];
+// Multi-color clouds
+const cloudColors = ["#FFFFFF","#F0F0F0","#FFE0E0","#E0F7FA"];
+const clouds=[];
 for(let i=0;i<6;i++){
-  clouds.push({x:Math.random()*W, y:Math.random()*H/2, w:100+Math.random()*50, h:50+Math.random()*30, speed:0.2 + Math.random()*0.3});
+  clouds.push({
+    x:Math.random()*W,
+    y:Math.random()*H/2,
+    scale:0.5+Math.random()*0.5,
+    speed:0.2 + Math.random()*0.3,
+    color: cloudColors[Math.floor(Math.random()*cloudColors.length)]
+  });
 }
 
-// Particles when jumping
-const particles = [];
+// Birds
+const birds=[];
+for(let i=0;i<5;i++){
+  birds.push({
+    x:Math.random()*W,
+    y:Math.random()*H/2,
+    speed:1 + Math.random()*1,
+    size:5+Math.random()*5
+  });
+});
+
+// Particles
+const particles=[];
 
 const scoreEl = document.getElementById('score');
 const overlay = document.getElementById('overlay');
@@ -160,16 +178,36 @@ function update(){
 
     obstacles = obstacles.filter(obs=>obs.x+obstacleWidth>0);
 
+    // Move clouds
     clouds.forEach(c=>{
-        c.x -= c.speed;
-        if(c.x+c.w<0) c.x=W+Math.random()*200;
+        c.x -= c.speed*2;
+        if(c.x+150<0){
+            c.x=W+Math.random()*200;
+            c.color=cloudColors[Math.floor(Math.random()*cloudColors.length)];
+        }
+    });
+
+    // Move birds
+    birds.forEach(b=>{
+        b.x += b.speed;
+        if(b.x-b.size>W) b.x=-10;
     });
 
     updateParticles();
 }
 
+function drawCloud(ctx,x,y,scale,color){
+    ctx.fillStyle=color;
+    ctx.beginPath();
+    ctx.arc(x,y,30*scale,Math.PI*0.5,Math.PI*1.5);
+    ctx.arc(x+40*scale,y-20*scale,40*scale,Math.PI*1,Math.PI*1.85);
+    ctx.arc(x+80*scale,y,30*scale,Math.PI*1.37,Math.PI*1.91);
+    ctx.closePath();
+    ctx.fill();
+}
+
 function drawBackground(){
-    // Gradient sky
+    // Sky gradient
     const grad=ctx.createLinearGradient(0,0,0,H);
     grad.addColorStop(0,"#87CEEB");
     grad.addColorStop(1,"#a0d8ff");
@@ -177,11 +215,17 @@ function drawBackground(){
     ctx.fillRect(0,0,W,H);
 
     // Clouds
-    clouds.forEach(c=>{
-        ctx.fillStyle="rgba(255,255,255,0.85)";
+    clouds.forEach(c=> drawCloud(ctx,c.x,c.y,c.scale,c.color));
+
+    // Birds
+    birds.forEach(b=>{
+        ctx.strokeStyle="#000"; ctx.lineWidth=2;
         ctx.beginPath();
-        ctx.ellipse(c.x,c.y,c.w/2,c.h/2,0,0,2*Math.PI);
-        ctx.fill();
+        ctx.moveTo(b.x,b.y);
+        ctx.lineTo(b.x-b.size,b.y-b.size/2);
+        ctx.moveTo(b.x,b.y);
+        ctx.lineTo(b.x-b.size,b.y+b.size/2);
+        ctx.stroke();
     });
 
     // Particles
@@ -246,8 +290,8 @@ function endGame(){
 }
 
 window.addEventListener("resize",()=>{W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;});
-window.addEventListener('touchstart', ()=>{ if(!gameStarted) startGame(); else { kite.vy=lift; jumpSound.currentTime=0; jumpSound.play(); createParticles(); }});
-window.addEventListener('mousedown', ()=>{ if(!gameStarted) startGame(); else { kite.vy=lift; jumpSound.currentTime=0; jumpSound.play(); createParticles(); }});
+window.addEventListener('touchstart', ()=>{ if(!gameStarted) startGame(); else { kite.vy=lift; jumpSound.currentTime=0; jumpSound.play(); particles.push({x:kite.x,y:kite.y,vx:Math.random()-0.5,vy:-2,alpha:1}); }});
+window.addEventListener('mousedown', ()=>{ if(!gameStarted) startGame(); else { kite.vy=lift; jumpSound.currentTime=0; jumpSound.play(); particles.push({x:kite.x,y:kite.y,vx:Math.random()-0.5,vy:-2,alpha:1}); }});
 
 resetGame();
 </script>
