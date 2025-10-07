@@ -218,51 +218,40 @@ function drawKite(){
     ctx.restore();
 }
 
-// Brick pillars with vertical text
+// Brick pillars with vertical KITEAI in each brick
 function drawObstacles(){
     obstacles.forEach(obs=>{
+        const brickHeight = 30; 
+        const brickWidth = obstacleWidth;
+        const text = "KITEAI";
+
         // Upper pillar
-        ctx.fillStyle="#8B4513";
-        ctx.fillRect(obs.x,0,obstacleWidth,obs.gapY);
+        for(let y=0; y<obs.gapY; y+=brickHeight){
+            ctx.fillStyle="#8B4513";
+            ctx.fillRect(obs.x, y, brickWidth, brickHeight-2);
+            ctx.strokeStyle="#A0522D"; ctx.lineWidth=2;
+            ctx.strokeRect(obs.x, y, brickWidth, brickHeight-2);
 
-        ctx.strokeStyle="#A0522D";
-        ctx.lineWidth=2;
-        for(let y=0;y<obs.gapY;y+=20){
-            ctx.beginPath();
-            ctx.moveTo(obs.x,y);
-            ctx.lineTo(obs.x+obstacleWidth,y);
-            ctx.stroke();
-        }
-
-        // Upper vertical KITE AI
-        ctx.fillStyle="#FFD700";
-        ctx.font="bold 18px Arial";
-        ctx.textAlign="center";
-        const upperText = ["K","I","T","E","A","I"];
-        const stepTop = (obs.gapY-20)/upperText.length;
-        for(let i=0;i<upperText.length;i++){
-            ctx.fillText(upperText[i], obs.x+obstacleWidth/2, 10 + i*stepTop);
+            ctx.fillStyle="#FFD700";
+            ctx.font="bold 14px Arial";
+            ctx.textAlign="center";
+            const letter = text[(y/brickHeight)%text.length];
+            ctx.fillText(letter, obs.x+brickWidth/2, y+brickHeight/2+5);
         }
 
         // Lower pillar
-        ctx.fillStyle="#8B4513";
-        ctx.fillRect(obs.x,obs.gapY+gapHeight,obstacleWidth,H-(obs.gapY+gapHeight));
+        const lowerStart = obs.gapY + gapHeight;
+        for(let y=lowerStart; y<H; y+=brickHeight){
+            ctx.fillStyle="#8B4513";
+            ctx.fillRect(obs.x, y, brickWidth, brickHeight-2);
+            ctx.strokeStyle="#A0522D"; ctx.lineWidth=2;
+            ctx.strokeRect(obs.x, y, brickWidth, brickHeight-2);
 
-        // Brick lines bottom
-        for(let y=obs.gapY+gapHeight;y<H;y+=20){
-            ctx.beginPath();
-            ctx.moveTo(obs.x,y);
-            ctx.lineTo(obs.x+obstacleWidth,y);
-            ctx.stroke();
-        }
-
-        // Lower vertical SUPPORT
-        ctx.fillStyle="#FFD700";
-        const lowerText = ["S","U","P","P","O","R","T"];
-        const lowerHeight = H-(obs.gapY+gapHeight)-20;
-        const stepBottom = lowerHeight/lowerText.length;
-        for(let i=0;i<lowerText.length;i++){
-            ctx.fillText(lowerText[i], obs.x+obstacleWidth/2, obs.gapY+gapHeight + 10 + i*stepBottom);
+            ctx.fillStyle="#FFD700";
+            ctx.font="bold 14px Arial";
+            ctx.textAlign="center";
+            const letter = text[((y-lowerStart)/brickHeight)%text.length];
+            ctx.fillText(letter, obs.x+brickWidth/2, y+brickHeight/2+5);
         }
     });
 }
