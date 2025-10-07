@@ -169,7 +169,6 @@ function update(){
 
     obstacles = obstacles.filter(obs=>obs.x+obstacleWidth>0);
 
-    // Clouds movement
     clouds.forEach(c=>{
         c.x -= c.speed*2;
         if(c.x+150<0){
@@ -218,7 +217,7 @@ function drawKite(){
     ctx.restore();
 }
 
-// Brick pillars with vertical KITEAI in each brick
+// Professional pillar with horizontal KITEAI
 function drawObstacles(){
     obstacles.forEach(obs=>{
         const brickHeight = 30; 
@@ -227,31 +226,41 @@ function drawObstacles(){
 
         // Upper pillar
         for(let y=0; y<obs.gapY; y+=brickHeight){
-            ctx.fillStyle="#8B4513";
+            const grad = ctx.createLinearGradient(obs.x, y, obs.x+brickWidth, y+brickHeight);
+            grad.addColorStop(0, "#8B4513");
+            grad.addColorStop(1, "#A0522D");
+            ctx.fillStyle = grad;
             ctx.fillRect(obs.x, y, brickWidth, brickHeight-2);
-            ctx.strokeStyle="#A0522D"; ctx.lineWidth=2;
+
+            ctx.strokeStyle="rgba(0,0,0,0.2)";
+            ctx.lineWidth=1;
             ctx.strokeRect(obs.x, y, brickWidth, brickHeight-2);
 
             ctx.fillStyle="#FFD700";
             ctx.font="bold 14px Arial";
             ctx.textAlign="center";
-            const letter = text[(y/brickHeight)%text.length];
-            ctx.fillText(letter, obs.x+brickWidth/2, y+brickHeight/2+5);
+            ctx.textBaseline="middle";
+            ctx.fillText(text, obs.x + brickWidth/2, y + brickHeight/2);
         }
 
         // Lower pillar
         const lowerStart = obs.gapY + gapHeight;
         for(let y=lowerStart; y<H; y+=brickHeight){
-            ctx.fillStyle="#8B4513";
+            const grad = ctx.createLinearGradient(obs.x, y, obs.x+brickWidth, y+brickHeight);
+            grad.addColorStop(0, "#8B4513");
+            grad.addColorStop(1, "#A0522D");
+            ctx.fillStyle = grad;
             ctx.fillRect(obs.x, y, brickWidth, brickHeight-2);
-            ctx.strokeStyle="#A0522D"; ctx.lineWidth=2;
+
+            ctx.strokeStyle="rgba(0,0,0,0.2)";
+            ctx.lineWidth=1;
             ctx.strokeRect(obs.x, y, brickWidth, brickHeight-2);
 
             ctx.fillStyle="#FFD700";
             ctx.font="bold 14px Arial";
             ctx.textAlign="center";
-            const letter = text[((y-lowerStart)/brickHeight)%text.length];
-            ctx.fillText(letter, obs.x+brickWidth/2, y+brickHeight/2+5);
+            ctx.textBaseline="middle";
+            ctx.fillText(text, obs.x + brickWidth/2, y + brickHeight/2);
         }
     });
 }
