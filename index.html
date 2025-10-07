@@ -1,753 +1,170 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Fly the Kite — The GoKite Journey</title>
-  <meta name="description" content="Fly the Kite — a short fun game to show GoKiteAI support. Collect orbs, avoid clouds, unlock quotes and hidden facts." />
-
-  <style>
-    :root{
-      --bg1:#72c2ff;
-      --bg2:#7b61ff;
-      --accent:#ffd93d;
-      --card: rgba(255,255,255,0.08);
-      --muted: rgba(255,255,255,0.85);
-      --text:#021722;
-      --maxw:900px;
-    }
-    html,body{height:100%;margin:0;font-family:Inter, Poppins, system-ui, -apple-system, "Segoe UI", Roboto, Arial}
-    body{
-      background: linear-gradient(180deg,var(--bg1), #95a0ff 60%, var(--bg2));
-      display:flex;align-items:center;justify-content:center;padding:18px;
-      -webkit-font-smoothing:antialiased;
-    }
-    .wrap{
-      width:100%;max-width:var(--maxw);
-      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
-      border-radius:14px;box-shadow:0 18px 50px rgba(4,6,20,0.35);overflow:hidden;border:1px solid rgba(255,255,255,0.06);
-    }
-    header{
-      display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:transparent;
-    }
-    .brand{display:flex;gap:12px;align-items:center}
-    .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(45deg,#fff5c2,#ffd93d);display:flex;align-items:center;justify-content:center;font-size:22px}
-    h1{margin:0;font-size:18px;color:white}
-    .sub{font-size:12px;color:rgba(255,255,255,0.85)}
-    .controls{display:flex;gap:8px;align-items:center}
-    button.btn{background:rgba(0,0,0,0.06);border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:10px;color:white;font-weight:700;cursor:pointer}
-    main{display:flex;gap:18px;padding:18px;align-items:flex-start}
-    .game-area{
-      flex:1;position:relative;border-radius:10px;overflow:hidden;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:12px;
-    }
-    canvas{width:100%;height:520px;display:block;border-radius:8px;background:transparent}
-    .sidebar{width:260px;min-width:200px}
-    .card{background:var(--card);padding:12px;border-radius:10px;color:var(--muted);margin-bottom:12px}
-    .stat{display:flex;justify-content:space-between;align-items:center;margin:8px 0}
-    .stat strong{color:white}
-    .footer{padding:12px;text-align:center;color:rgba(255,255,255,0.9);font-size:13px}
-    /* modal */
-    .modal{
-      position:fixed;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(0deg, rgba(2,4,10,0.45), rgba(2,4,10,0.45));z-index:50;backdrop-filter: blur(2px);
-    }
-    .modal-card{background:white;color:var(--text);padding:18px;border-radius:12px;max-width:460px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
-    .quote{font-weight:800;font-size:18px;margin-bottom:8px}
-    .fact{font-size:14px;color:#334;opacity:0.9;margin-bottom:12px}
-    .meme{font-size:12px;color:#666;margin-bottom:10px}
-    .small{font-size:12px;color:#555}
-    @media (max-width:880px){
-      main{flex-direction:column}
-      canvas{height:420px}
-      .sidebar{width:100%}
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kite Flight - GoKiteAI</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; font-family: Arial, sans-serif; background:#fff176; }
+  canvas { display:block; background:#ffeb3b; }
+  #score { position:absolute; top:20px; left:50%; transform:translateX(-50%); font-size:24px; font-weight:bold; color:#212121; z-index:10; }
+  #modal {
+    position:fixed; top:0; left:0; right:0; bottom:0;
+    display:none; align-items:center; justify-content:center;
+    background:rgba(0,0,0,0.5); z-index:20;
+  }
+  #modalContent {
+    background:white; padding:20px; border-radius:12px; text-align:center; max-width:300px;
+  }
+  button { padding:8px 16px; margin-top:12px; font-size:16px; border:none; border-radius:8px; background:#fbc02d; color:#212121; cursor:pointer; }
+</style>
 </head>
 <body>
-  <div class="wrap" role="application" aria-label="Fly the Kite Game">
-    <header>
-      <div class="brand">
-        <div class="logo" aria-hidden="true">🪁</div>
-        <div>
-          <h1>Fly the Kite — GoKite Journey</h1>
-          <div class="sub">Click / tap to fly • Collect orbs • Unlock quotes & hidden facts</div>
-        </div>
-      </div>
-
-      <div class="controls">
-        <button class="btn" id="startBtn">Start</button>
-        <button class="btn" id="pauseBtn">Pause</button>
-        <button class="btn" id="shareBtn">Share</button>
-      </div>
-    </header>
-
-    <main>
-      <div class="game-area card" id="gameCard">
-        <canvas id="gameCanvas" width="800" height="520" aria-label="Game canvas"></canvas>
-        <!-- HUD overlay -->
-        <div id="hud" style="position:absolute;left:18px;top:18px;color:white;font-weight:800">
-          Score: <span id="scoreVal">0</span> &nbsp; Lives: <span id="livesVal">3</span> &nbsp; Level: <span id="levelVal">1</span>
-        </div>
-      </div>
-
-      <aside class="sidebar">
-        <div class="card">
-          <div style="font-weight:900;color:white">How to play</div>
-          <ul style="margin-top:8px">
-            <li>Click / tap or press Space / ↑ to fly up.</li>
-            <li>Avoid dark clouds — they slow you down and cost a life.</li>
-            <li>Collect glowing GoKite orbs for points.</li>
-            <li>Reach the end of each level to unlock a quote + hidden fact.</li>
-          </ul>
-        </div>
-
-        <div class="card">
-          <div style="font-weight:900;color:white">Quick Tips</div>
-          <div class="small" style="margin-top:8px">
-            - Smooth, short taps work best.<br>
-            - Hidden facts appear as Easter eggs — click the tiny kite icon after level complete.
-          </div>
-        </div>
-
-        <div class="card">
-          <div style="font-weight:900;color:white">Leaderboard (local)</div>
-          <div id="leaderboard" style="margin-top:8px;color:white">
-            <div class="stat"><span>Your Score</span><strong id="lb-score">0</strong></div>
-            <div class="stat"><span>Best</span><strong id="lb-best">0</strong></div>
-            <div style="margin-top:8px;font-size:12px;color:rgba(255,255,255,0.85)">Share your final screen on X and tag @GoKiteAI to get noticed.</div>
-          </div>
-        </div>
-
-        <div class="card" id="easterCard" style="display:none">
-          <div style="font-weight:900;color:white">Hidden Fact</div>
-          <div id="hiddenFact" style="margin-top:8px;color:#e6f">—</div>
-        </div>
-
-      </aside>
-    </main>
-
-    <div class="footer">Built for creators • Tag <a href="https://x.com/GoKiteAI" target="_blank" rel="noopener">@GoKiteAI</a> • Enjoy the flight!</div>
+<div id="score">0</div>
+<div id="modal">
+  <div id="modalContent">
+    <h2>Game Over!</h2>
+    <p id="finalScore">Score: 0</p>
+    <p id="hiddenFact">💡 Hidden GoKiteAI Fact: Creators fly higher with AI prompts!</p>
+    <button id="restartBtn">Play Again</button>
+    <button id="shareBtn">Share Score</button>
   </div>
+</div>
+<canvas id="gameCanvas"></canvas>
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+let W = canvas.width = window.innerWidth;
+let H = canvas.height = window.innerHeight;
 
-  <!-- Modal container -->
-  <div id="modalRoot" style="display:none"></div>
+let kite = {x:50, y:H/2, w:40, h:30, vy:0};
+let gravity = 0.6;
+let lift = -12;
+let obstacles = [];
+let obstacleWidth = 60;
+let gapHeight = 180;
+let frame = 0;
+let score = 0;
+let gameOverFlag = false;
 
-  <script>
-/* ============================
-   Fly the Kite — Game Script
-   - Click/tap controls
-   - 3 short levels (increasing difficulty)
-   - Orbs collectible
-   - Clouds obstacles
-   - After each level: popup with quote/meme and hidden fact
-   - Final screen with share
-   ============================ */
+const scoreEl = document.getElementById('score');
+const modal = document.getElementById('modal');
+const finalScore = document.getElementById('finalScore');
+const restartBtn = document.getElementById('restartBtn');
+const shareBtn = document.getElementById('shareBtn');
 
-(() => {
-  // Canvas setup
-  const canvas = document.getElementById('gameCanvas');
-  const ctx = canvas.getContext('2d');
+function resetGame() {
+  kite.y = H/2;
+  kite.vy = 0;
+  obstacles = [];
+  frame = 0;
+  score = 0;
+  gameOverFlag = false;
+  scoreEl.textContent = score;
+  modal.style.display = 'none';
+  requestAnimationFrame(gameLoop);
+}
 
-  let W = canvas.width = canvas.clientWidth;
-  let H = canvas.height = canvas.clientHeight;
+restartBtn.addEventListener('click', resetGame);
+shareBtn.addEventListener('click', () => {
+  const text = encodeURIComponent(`I scored ${score} in Kite Flight! 🚀 #GoKiteFlight @GoKiteAI`);
+  window.open(`https://x.com/intent/tweet?text=${text}`, '_blank', 'noopener');
+});
 
-  // HUD
-  const scoreVal = document.getElementById('scoreVal');
-  const livesVal = document.getElementById('livesVal');
-  const levelVal = document.getElementById('levelVal');
-  const lbScore = document.getElementById('lb-score');
-  const lbBest = document.getElementById('lb-best');
-  const easterCard = document.getElementById('easterCard');
-  const hiddenFactEl = document.getElementById('hiddenFact');
+function spawnObstacle() {
+  let gapY = Math.random()*(H-gapHeight-100)+50;
+  obstacles.push({x:W, gapY});
+}
 
-  // Modal root
-  const modalRoot = document.getElementById('modalRoot');
+function update() {
+  if(gameOverFlag) return;
 
-  // Buttons
-  const startBtn = document.getElementById('startBtn');
-  const pauseBtn = document.getElementById('pauseBtn');
-  const shareBtn = document.getElementById('shareBtn');
+  frame++;
+  kite.vy += gravity;
+  kite.y += kite.vy;
 
-  // Game state
-  let running = false;
-  let paused = false;
-  let lastTime = 0;
-  let score = 0;
-  let lives = 3;
-  let level = 1;
-  const MAX_LEVEL = 3;
-  let orbCount = 0;
-  let best = parseInt(localStorage.getItem('gokite_best') || '0', 10);
+  if(frame % 90 === 0) spawnObstacle();
 
-  lbBest.textContent = best;
-
-  // Game objects
-  const gravity = 0.6;
-  const kite = {
-    x: 120,
-    y: H/2,
-    vy: 0,
-    w: 48,
-    h: 36,
-    angle: 0
-  };
-
-  const orbs = []; // collectible
-  const clouds = []; // obstacles
-  const particles = [];
-
-  // Level params
-  function levelParams(lvl){
-    // increase orb frequency and cloud speed with level
-    return {
-      orbFreq: Math.max(900 - lvl * 200, 300),
-      cloudFreq: Math.max(1600 - lvl * 300, 700),
-      cloudSpeed: 1 + lvl * 0.6,
-      orbValue: 10 + lvl * 5,
-      targetOrbs: 6 + lvl * 3
-    };
-  }
-  let lp = levelParams(level);
-
-  // Quotes / memes / hidden facts - replaceable
-  const LEVEL_CONTENT = [
-    {
-      quote: "“Take small flights every day — they add up to a long journey.”",
-      meme: "Meme: A kite with rocket boosters — 'When your prompt hits the sweet spot.'",
-      fact: "Hidden Fact: GoKiteAI supports creators with rapid prompt templates to speed up content creation."
-    },
-    {
-      quote: "“The sky's not the limit — it's the starting line.”",
-      meme: "Meme: Sky full of kites, one with a crown — 'Top creators fly together.'",
-      fact: "Hidden Fact: GoKiteAI prioritizes privacy-first AI experiences for community creators."
-    },
-    {
-      quote: "“Keep your tail steady — consistency wins altitude.”",
-      meme: "Meme: Kite surfing the clouds — 'Engagement + quality = lift.'",
-      fact: "Hidden Fact: GoKiteAI offers lightweight scoring helpers for sharing performance with teams."
-    }
-  ];
-
-  // Utilities
-  function rand(min, max){ return Math.random() * (max - min) + min; }
-  function clamp(v,min,max){ return Math.max(min,Math.min(max,v)); }
-
-  // Resize handling
-  function resize(){
-    W = canvas.width = canvas.clientWidth;
-    H = canvas.height = canvas.clientHeight;
-    // reposition kite if outside
-    kite.y = clamp(kite.y, 40, H - 40);
-  }
-  window.addEventListener('resize', resize);
-
-  // Input: click/tap and keyboard
-  let inputPressed = false;
-  function press(){
-    inputPressed = true;
-    // apply impulse
-    kite.vy = -8;
-  }
-  function release(){ inputPressed = false; }
-  canvas.addEventListener('mousedown', press);
-  canvas.addEventListener('touchstart', (e) => { e.preventDefault(); press(); }, {passive:false});
-  window.addEventListener('mouseup', release);
-  window.addEventListener('touchend', release);
-
-  window.addEventListener('keydown', (e) => {
-    if(e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); press(); }
-    if(e.code === 'KeyP') togglePause();
-  });
-
-  // Buttons
-  startBtn.addEventListener('click', () => {
-    if(!running) startGame();
-    else resetGame();
-  });
-  pauseBtn.addEventListener('click', togglePause);
-  shareBtn.addEventListener('click', () => {
-    const text = encodeURIComponent(`I finished Fly the Kite — GoKite Journey with ${score} points! 🚀 #GoKiteFlight @GoKiteAI`);
-    window.open(`https://x.com/intent/tweet?text=${text}`, '_blank', 'noopener');
-  });
-
-  function togglePause(){
-    if(!running) return;
-    paused = !paused;
-    pauseBtn.textContent = paused ? 'Resume' : 'Pause';
-    if(!paused) lastTime = performance.now();
+  // move obstacles
+  for(let i=0;i<obstacles.length;i++){
+    obstacles[i].x -= 4;
   }
 
-  // Spawning orbs and clouds
-  let orbTimer = 0, cloudTimer = 0;
-  function spawnOrb(){
-    const r = 12;
-    orbs.push({
-      x: W + 40,
-      y: rand(60, H - 80),
-      r,
-      vx: -rand(1.2, 2.8),
-      wobble: rand(0, Math.PI*2),
-      value: lp.orbValue
-    });
-  }
-  function spawnCloud(){
-    const cw = rand(80, 160);
-    clouds.push({
-      x: W + 80,
-      y: rand(50, H - 140),
-      w: cw,
-      h: rand(40, 80),
-      vx: -lp.cloudSpeed,
-      type: Math.random() < 0.2 ? 'storm' : 'cloud' // storm is more punishing
-    });
-  }
-
-  // Collision helpers
-  function pointCircle(px,py,cx,cy,r){
-    const dx = px-cx, dy = py-cy;
-    return dx*dx + dy*dy <= r*r;
-  }
-  function rectCircle(rx,ry,rw,rh,cx,cy,cr){
-    // nearest point
-    const nx = clamp(cx, rx, rx+rw);
-    const ny = clamp(cy, ry, ry+rh);
-    const dx = nx - cx; const dy = ny - cy;
-    return dx*dx + dy*dy <= cr*cr;
-  }
-
-  // Particles (for orb collect)
-  function spawnParticles(x,y,color,count=12){
-    for(let i=0;i<count;i++){
-      particles.push({
-        x,y,vx:rand(-3,3),vy:rand(-4,-0.5),life: rand(40,80),age:0,color
-      });
-    }
-  }
-
-  // Game loop
-  function update(dt){
-    if(!running || paused) return;
-
-    // timers
-    orbTimer += dt;
-    cloudTimer += dt;
-
-    if(orbTimer > lp.orbFreq){
-      orbTimer = 0;
-      spawnOrb();
-    }
-    if(cloudTimer > lp.cloudFreq){
-      cloudTimer = 0;
-      spawnCloud();
-    }
-
-    // update kite
-    kite.vy += gravity * (dt/16);
-    kite.y += kite.vy * (dt/16);
-    kite.y = clamp(kite.y, 10, H - 10);
-    // angle based on vy
-    kite.angle = clamp(kite.vy * 0.05, -0.6, 0.6);
-
-    // update orbs
-    for(let i=orbs.length-1;i>=0;i--){
-      const o = orbs[i];
-      o.x += o.vx * (dt/16);
-      o.wobble += 0.06;
-      o.y += Math.sin(o.wobble) * 0.4;
-      if(o.x < -40) orbs.splice(i,1);
-      // collision kite center ~
-      if(pointCircle(kite.x + kite.w/4, kite.y, o.x, o.y, o.r + 8)){
-        score += o.value;
-        orbCount++;
-        spawnParticles(o.x,o.y,'#ffd93d');
-        orbs.splice(i,1);
-        updateHUD();
-        // small check for mid-level popup: every targetOrbs collected
-        if(orbCount >= lp.targetOrbs){
-          // complete level
-          levelComplete();
-        }
+  // check collisions
+  for(let obs of obstacles){
+    if(kite.x + kite.w > obs.x && kite.x < obs.x + obstacleWidth){
+      if(kite.y < obs.gapY || kite.y + kite.h > obs.gapY + gapHeight){
+        endGame();
       }
     }
+  }
 
-    // update clouds
-    for(let i=clouds.length-1;i>=0;i--){
-      const c = clouds[i];
-      c.x += c.vx * (dt/16);
-      if(c.x + c.w < -40) clouds.splice(i,1);
-      // collision roughly between kite rect and cloud rect
-      const kiteCenterX = kite.x + kite.w/4;
-      if(rectCircle(c.x, c.y, c.w, c.h, kiteCenterX, kite.y, 12)){
-        // penalty
-        clouds.splice(i,1);
-        lives -= (c.type === 'storm' ? 2 : 1);
-        lives = Math.max(0, lives);
-        updateHUD();
-        // small knockback
-        kite.vy = 6;
-        if(lives <= 0) gameOver();
-      }
-    }
+  if(kite.y + kite.h > H || kite.y < 0) endGame();
 
-    // particles
-    for(let i=particles.length-1;i>=0;i--){
-      const p = particles[i];
-      p.vy += 0.2;
-      p.x += p.vx;
-      p.y += p.vy;
-      p.age++;
-      if(p.age > p.life) particles.splice(i,1);
+  // update score
+  for(let obs of obstacles){
+    if(!obs.passed && obs.x + obstacleWidth < kite.x){
+      score++;
+      obs.passed = true;
+      scoreEl.textContent = score;
     }
   }
 
-  function draw(){
-    // clear
-    ctx.clearRect(0,0,W,H);
+  // remove offscreen obstacles
+  obstacles = obstacles.filter(obs => obs.x + obstacleWidth > 0);
+}
 
-    // background subtle clouds gradient
-    const g = ctx.createLinearGradient(0,0,0,H);
-    g.addColorStop(0,'rgba(255,255,255,0.02)');
-    g.addColorStop(1,'rgba(0,0,0,0.02)');
-    ctx.fillStyle = g;
-    ctx.fillRect(0,0,W,H);
+function drawKite(){
+  ctx.save();
+  ctx.fillStyle = '#fbc02d';
+  ctx.beginPath();
+  ctx.moveTo(kite.x, kite.y);
+  ctx.lineTo(kite.x+kite.w, kite.y+kite.h/2);
+  ctx.lineTo(kite.x, kite.y+kite.h);
+  ctx.lineTo(kite.x-kite.w, kite.y+kite.h/2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
 
-    // draw orbs
-    orbs.forEach(o => {
-      // glow
-      ctx.beginPath();
-      ctx.fillStyle = 'rgba(255,217,61,0.12)';
-      ctx.arc(o.x, o.y, o.r + 10, 0, Math.PI*2);
-      ctx.fill();
-      // orb body
-      ctx.beginPath();
-      ctx.fillStyle = '#ffd93d';
-      ctx.arc(o.x, o.y, o.r, 0, Math.PI*2);
-      ctx.fill();
-      // shine
-      ctx.beginPath();
-      ctx.fillStyle = 'rgba(255,255,255,0.9)';
-      ctx.arc(o.x - 4, o.y - 4, 4, 0, Math.PI*2);
-      ctx.fill();
-    });
-
-    // draw clouds
-    clouds.forEach(c => {
-      ctx.save();
-      ctx.globalAlpha = (c.type === 'storm') ? 0.95 : 0.86;
-      // cloud base
-      ctx.fillStyle = (c.type === 'storm') ? 'rgba(20,30,40,0.95)' : 'rgba(255,255,255,0.9)';
-      // three circles
-      const cx = c.x, cy = c.y;
-      ctx.beginPath();
-      ctx.arc(cx, cy + c.h*0.15, c.h*0.8, 0, Math.PI*2);
-      ctx.arc(cx + c.w*0.3, cy - c.h*0.1, c.h*0.7, 0, Math.PI*2);
-      ctx.arc(cx + c.w*0.6, cy + c.h*0.15, c.h*0.6, 0, Math.PI*2);
-      ctx.fill();
-      // drizzle if storm
-      if(c.type === 'storm'){
-        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-        ctx.lineWidth = 1.5;
-        for(let i=0;i<6;i++){
-          ctx.beginPath();
-          ctx.moveTo(cx + i*8, cy + c.h*0.5);
-          ctx.lineTo(cx + i*8 + 6, cy + c.h*0.9);
-          ctx.stroke();
-        }
-      }
-      ctx.restore();
-    });
-
-    // draw kite (simple triangle + tail)
-    ctx.save();
-    ctx.translate(kite.x, kite.y);
-    ctx.rotate(kite.angle);
-    // tail
-    ctx.beginPath();
-    ctx.strokeStyle = 'rgba(255,255,255,0.45)';
-    ctx.lineWidth = 2;
-    ctx.moveTo(-18, 12);
-    for(let t=0;t<6;t++){
-      ctx.lineTo(-18 - t*14, 12 + Math.sin((Date.now()/120) + t) * 8 + t*4);
-    }
-    ctx.stroke();
-    // kite body (diamond)
-    ctx.beginPath();
-    ctx.moveTo(0,-18);
-    ctx.lineTo(18,0);
-    ctx.lineTo(0,18);
-    ctx.lineTo(-18,0);
-    ctx.closePath();
-    // fill with gradient
-    const kg = ctx.createLinearGradient(-18,-18,18,18);
-    kg.addColorStop(0,'#ffef9a');
-    kg.addColorStop(1,'#ffd93d');
-    ctx.fillStyle = kg;
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(0,0,0,0.08)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    // kite accent
-    ctx.beginPath();
-    ctx.fillStyle = '#ffffff';
-    ctx.arc(6, -2, 3, 0, Math.PI*2);
-    ctx.fill();
-    ctx.restore();
-
-    // particles
-    particles.forEach(p => {
-      ctx.beginPath();
-      ctx.fillStyle = p.color;
-      ctx.globalAlpha = 1 - (p.age / p.life);
-      ctx.arc(p.x, p.y, 2.8, 0, Math.PI*2);
-      ctx.fill();
-      ctx.globalAlpha = 1;
-    });
-
-    // HUD is DOM overlay - no need to draw
+function drawObstacles(){
+  ctx.fillStyle = '#616161';
+  for(let obs of obstacles){
+    // top
+    ctx.fillRect(obs.x, 0, obstacleWidth, obs.gapY);
+    // bottom
+    ctx.fillRect(obs.x, obs.gapY + gapHeight, obstacleWidth, H - (obs.gapY + gapHeight));
   }
+}
 
-  // animation frame
-  function loop(now){
-    if(!lastTime) lastTime = now;
-    const dt = now - lastTime;
-    lastTime = now;
-    update(dt);
-    draw();
-    if(running) requestAnimationFrame(loop);
-  }
+function draw() {
+  ctx.clearRect(0,0,W,H);
+  drawObstacles();
+  drawKite();
+}
 
-  // Level complete / popups
-  function levelComplete(){
-    running = false; // pause loop until modal closed
-    // show modal with quote/meme and hidden fact
-    const content = LEVEL_CONTENT[level-1] || LEVEL_CONTENT[0];
-    showModal({
-      title: `Level ${level} Complete!`,
-      quote: content.quote,
-      meme: content.meme,
-      fact: content.fact,
-      onClose: () => {
-        // show hidden fact card in sidebar as extra easter egg trigger
-        easterCard.style.display = 'block';
-        hiddenFactEl.textContent = content.fact;
-        // show "click small kite to reveal" - but for now just show it
-        // advance level or finish
-        if(level < MAX_LEVEL){
-          level++;
-          lp = levelParams(level);
-          resetForLevel();
-          running = true; lastTime = performance.now(); requestAnimationFrame(loop);
-        } else {
-          // final screen
-          finalScreen();
-        }
-      }
-    });
-  }
+function gameLoop() {
+  if(gameOverFlag) return;
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
 
-  function showModal({title, quote, meme, fact, onClose}) {
-    modalRoot.innerHTML = `
-      <div class="modal" role="dialog" aria-modal="true" aria-label="${title}">
-        <div class="modal-card">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div style="font-weight:900">${title}</div>
-            <div style="font-size:12px;color:#777">Level ${level} / ${MAX_LEVEL}</div>
-          </div>
-          <div style="margin-top:12px">
-            <div class="quote">${quote}</div>
-            <div class="meme">${meme}</div>
-            <div class="fact">${fact}</div>
-            <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
-              <button id="modalNext" class="btn">Continue</button>
-              <button id="modalShare" class="btn">Share this</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-    modalRoot.style.display = 'block';
-    // listeners
-    document.getElementById('modalNext').addEventListener('click', () => {
-      modalRoot.style.display = 'none';
-      modalRoot.innerHTML = '';
-      if(onClose) onClose();
-    });
-    document.getElementById('modalShare').addEventListener('click', () => {
-      const text = encodeURIComponent(`${quote} — I just completed level ${level} in Fly the Kite! #GoKiteFlight @GoKiteAI`);
-      window.open(`https://x.com/intent/tweet?text=${text}`, '_blank', 'noopener');
-    });
-  }
+function endGame(){
+  gameOverFlag = true;
+  finalScore.textContent = 'Score: '+score;
+  modal.style.display = 'flex';
+}
 
-  function finalScreen(){
-    // show a celebratory modal with final stats and share
-    modalRoot.innerHTML = `
-      <div class="modal" role="dialog" aria-modal="true">
-        <div class="modal-card">
-          <div style="font-weight:900">🎉 You Reached the Sky!</div>
-          <div style="margin-top:10px">Final Score: <strong>${score}</strong></div>
-          <div style="margin-top:10px;color:#444">${LEVEL_CONTENT[MAX_LEVEL-1].quote}</div>
-          <div style="margin-top:12px">
-            <div style="font-weight:700">Hidden Master Tip</div>
-            <div style="font-size:13px;margin-top:6px">${LEVEL_CONTENT[MAX_LEVEL-1].fact}</div>
-         </div>
-          <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">
-            <button id="playAgain" class="btn">Play Again</button>
-            <button id="shareFinal" class="btn">Share Score</button>
-          </div>
-        </div>
-      </div>
-    `;
-    modalRoot.style.display = 'block';
-    document.getElementById('playAgain').addEventListener('click', () => {
-      modalRoot.style.display = 'none'; modalRoot.innerHTML = '';
-      resetGame();
-    });
-    document.getElementById('shareFinal').addEventListener('click', () => {
-      const text = encodeURIComponent(`I finished Fly the Kite — GoKite Journey with ${score} points! 🚀 #GoKiteFlight @GoKiteAI`);
-      window.open(`https://x.com/intent/tweet?text=${text}`, '_blank', 'noopener');
-    });
-    // update leaderboard
-    const prevBest = best;
-    if(score > prevBest){ best = score; localStorage.setItem('gokite_best', String(best)); lbBest.textContent = best; }
-    lbScore.textContent = score;
-  }
+window.addEventListener('resize', ()=>{
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+});
 
-  function gameOver(){
-    running = false;
-    modalRoot.innerHTML = `
-      <div class="modal" role="dialog" aria-modal="true">
-        <div class="modal-card">
-          <div style="font-weight:900">Game Over</div>
-          <div style="margin-top:8px">You ran out of lives. Score: <strong>${score}</strong></div>
-          <div style="margin-top:12px;color:#666">Tip: short, frequent taps keep your kite steady.</div>
-          <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">
-            <button id="tryAgain" class="btn">Try Again</button>
-            <button id="shareFail" class="btn">Share Score</button>
-          </div>
-        </div>
-      </div>
-    `;
-    modalRoot.style.display = 'block';
-    document.getElementById('tryAgain').addEventListener('click', () => {
-      modalRoot.style.display = 'none'; modalRoot.innerHTML = '';
-      resetGame();
-    });
-    document.getElementById('shareFail').addEventListener('click', () => {
-      const text = encodeURIComponent(`Tried Fly the Kite — GoKite Journey and scored ${score}. I'll beat it next time! #GoKiteFlight @GoKiteAI`);
-      window.open(`https://x.com/intent/tweet?text=${text}`, '_blank', 'noopener');
-    });
-  }
+window.addEventListener('touchstart', ()=>{ kite.vy = lift; });
+window.addEventListener('mousedown', ()=>{ kite.vy = lift; });
 
-  // Reset / start functions
-  function resetForLevel(){
-    // clear arrays
-    orbs.length = 0;
-    clouds.length = 0;
-    particles.length = 0;
-    orbCount = 0;
-    // place some initial orbs for a quicker start
-    for(let i=0;i<3 + level;i++){
-      orbs.push({
-        x: rand(W*0.6, W*0.95),
-        y: rand(80, H-80),
-        r: 12,
-        vx: -rand(1.2, 2.6),
-        wobble: rand(0, Math.PI*2),
-        value: lp.orbValue
-      });
-    }
-    // reset kite vertical position gently
-    kite.y = H/2;
-    kite.vy = 0;
-    updateHUD();
-  }
-
-  function startGame(){
-    running = true;
-    paused = false;
-    score = 0;
-    lives = 3;
-    level = 1;
-    lp = levelParams(level);
-    orbTimer = cloudTimer = 0;
-    resetForLevel();
-    updateHUD();
-    startBtn.textContent = 'Restart';
-    pauseBtn.textContent = 'Pause';
-    lastTime = performance.now();
-    requestAnimationFrame(loop);
-  }
-
-  function resetGame(){
-    running = false;
-    paused = false;
-    score = 0;
-    lives = 3;
-    level = 1;
-    lp = levelParams(level);
-    orbs.length = 0; clouds.length = 0; particles.length = 0;
-    orbCount = 0;
-    updateHUD();
-    startBtn.textContent = 'Start';
-    modalRoot.style.display = 'none';
-    modalRoot.innerHTML = '';
-  }
-
-  function updateHUD(){
-    scoreVal.textContent = score;
-    livesVal.textContent = lives;
-    levelVal.textContent = level;
-  }
-
-  // main animation tick with delta time handling
-  function tick(time){
-    if(!running) return;
-    const dt = time - (lastTime || time);
-    update(dt);
-    draw();
-    lastTime = time;
-    if(running) requestAnimationFrame(tick);
-  }
-
-  // Kick off: small intro animation state (not running)
-  (function intro(){
-    // place a few orbs drifting slowly
-    orbs.length = 0;
-    for(let i=0;i<6;i++){
-      orbs.push({
-        x: rand(W*0.3, W*0.9),
-        y: rand(80, H-80),
-        r: 12,
-        vx: -rand(0.2, 0.6),
-        wobble: rand(0, Math.PI*2),
-        value: 10
-      });
-    }
-    draw();
-  })();
-
-  // Friendly accessibility: hint to user on first play
-  if(!localStorage.getItem('gokite_played')){
-    localStorage.setItem('gokite_played','1');
-    setTimeout(()=> {
-      modalRoot.innerHTML = `
-        <div class="modal" role="dialog" aria-modal="true">
-          <div class="modal-card">
-            <div style="font-weight:900">Welcome</div>
-            <div style="margin-top:8px;color:#444">Click / tap or press Space to fly. Collect orbs to complete levels and uncover hidden GoKite facts.</div>
-            <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
-              <button id="playStart" class="btn">Let's Fly</button>
-            </div>
-          </div>
-        </div>`;
-      modalRoot.style.display = 'block';
-      document.getElementById('playStart').addEventListener('click', () => {
-        modalRoot.style.display = 'none'; modalRoot.innerHTML = '';
-        startGame();
-      });
-    }, 600);
-  }
-
-})();
-  </script>
+resetGame();
+</script>
 </body>
 </html>
