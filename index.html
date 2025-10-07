@@ -50,6 +50,7 @@ let frame = 0;
 let score = 0;
 let gameOverFlag = false;
 let gameStarted = false;
+let loopId = null;
 
 const scoreEl = document.getElementById('score');
 const overlay = document.getElementById('overlay');
@@ -72,15 +73,19 @@ function resetGame() {
   startBtn.textContent = 'Start Game';
   startBtn.style.display = 'inline-block';
   shareBtn.style.display = 'none';
+  cancelAnimationFrame(loopId); // Stop any previous loop
 }
 
 function startGame() {
   gameStarted = true;
   overlay.style.display = 'none';
-  requestAnimationFrame(gameLoop);
+  loopId = requestAnimationFrame(gameLoop);
 }
 
-startBtn.addEventListener('click', startGame);
+startBtn.addEventListener('click', ()=>{
+  startGame();
+});
+
 shareBtn.addEventListener('click', ()=>{
   const text = encodeURIComponent(`I scored ${score} in Kite Flight! 🪁 #GoKiteFlight @GoKiteAI`);
   window.open(`https://x.com/intent/tweet?text=${text}`, '_blank', 'noopener');
@@ -179,7 +184,7 @@ function gameLoop() {
   if(gameOverFlag) return;
   update();
   draw();
-  requestAnimationFrame(gameLoop);
+  loopId = requestAnimationFrame(gameLoop);
 }
 
 function endGame() {
