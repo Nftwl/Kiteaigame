@@ -62,10 +62,12 @@ function resetGame() {
   frame = 0;
   score = 0;
   gameOverFlag = false;
+  gameStarted = false;
   scoreEl.textContent = score;
   overlay.style.display = 'flex';
   overlayTitle.textContent = '🪁 Kite Flight';
   overlayText.textContent = 'Tap or Click to Start';
+  startBtn.textContent = 'Start Game';
   startBtn.style.display = 'inline-block';
 }
 
@@ -124,10 +126,24 @@ function drawKite() {
 }
 
 function drawObstacles() {
-  ctx.fillStyle = "rgba(255,255,255,0.7)";
   for(let obs of obstacles){
+    // Top obstacle
+    ctx.fillStyle = "rgba(255,255,255,0.7)";
     ctx.fillRect(obs.x, 0, obstacleWidth, obs.gapY);
+    ctx.fillStyle = "#0288d1";
+    ctx.font = "20px Arial";
+    ctx.textAlign = "center";
+    for(let y=20; y<obs.gapY; y+=40){
+      ctx.fillText("KiteAI", obs.x + obstacleWidth/2, y);
+    }
+
+    // Bottom obstacle
+    ctx.fillStyle = "rgba(255,255,255,0.7)";
     ctx.fillRect(obs.x, obs.gapY + gapHeight, obstacleWidth, H - (obs.gapY + gapHeight));
+    ctx.fillStyle = "#0288d1";
+    for(let y=obs.gapY + gapHeight + 20; y<H; y+=40){
+      ctx.fillText("KiteAI", obs.x + obstacleWidth/2, y);
+    }
   }
 }
 
