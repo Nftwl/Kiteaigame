@@ -86,7 +86,6 @@ button {
 </style>
 </head>
 <body>
-
 <div id="score">0</div>
 <button id="aboutBtn" class="corner-btn">ℹ️ About</button>
 <button id="leaderBtn" class="corner-btn">🏆 Leaderboard</button>
@@ -120,8 +119,8 @@ const obstacleWidth = 70, gapHeight = 180;
 let frame = 0, score = 0;
 let gameOverFlag = false, gameStarted = false, paused = false, animationId = null;
 
+// Base64-encoded Wind Runner badge (replace with your image)
 const bannerImg = new Image();
-// 👉 Replace this link with your actual hosted Wind Runner image link
 bannerImg.src = "https://i.ibb.co/MRnj2S7/wind-runner-badge.png";
 
 const clouds=[], cloudColors=["#FFFFFF","#F0F0F0","#FFE0E0","#E0F7FA"];
