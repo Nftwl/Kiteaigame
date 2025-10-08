@@ -5,46 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kite Flight - GoKiteAI</title>
 <style>
-html, body { 
-  margin:0; padding:0; overflow:hidden; 
-  font-family: Arial, sans-serif; 
-  background:#87CEEB; 
+html, body {
+  margin:0; padding:0; overflow:hidden;
+  font-family: Arial, sans-serif;
+  background:#87CEEB;
 }
 canvas { display:block; }
 
 /* Score display */
-#score { 
-  position:absolute; 
-  top:20px; 
-  left:50%; 
-  transform:translateX(-50%); 
-  font-size:32px; 
-  font-weight:bold; 
-  color:#fff; 
-  text-shadow:2px 2px 4px #000; 
-  z-index:10; 
-}
-
-/* ✅ Added logo + background image */
-#logo {
-  position:fixed;
-  top:10px;
-  left:60px;
-  width:80px;
-  opacity:0.9;
-  z-index:25;
-}
-#bgLogo {
-  position:fixed;
-  top:15%;
+#score {
+  position:absolute;
+  top:20px;
   left:50%;
   transform:translateX(-50%);
-  width:45%;
-  max-width:650px;
-  opacity:0.12;
-  pointer-events:none;
-  z-index:0;
-  filter: drop-shadow(0 0 10px rgba(255,255,255,0.3));
+  font-size:32px;
+  font-weight:bold;
+  color:#fff;
+  text-shadow:2px 2px 4px #000;
+  z-index:10;
 }
 
 /* Overlay + Buttons */
@@ -54,24 +32,22 @@ canvas { display:block; }
   background:rgba(0,0,0,0.6); z-index:20; flex-direction:column;
 }
 #overlayContent {
-  background:linear-gradient(145deg,#ffffff,#f0f0f0); 
-  padding:20px; 
-  border-radius:16px; 
-  text-align:center; 
-  max-width:320px; 
+  background:linear-gradient(145deg,#ffffff,#f0f0f0);
+  padding:20px; border-radius:16px;
+  text-align:center; max-width:320px;
   box-shadow:0 8px 20px rgba(0,0,0,0.3);
 }
-button { 
-  padding:10px 16px; 
-  margin:8px 4px 0 4px; 
-  font-size:16px; 
-  border:none; 
-  border-radius:12px; 
-  background:#fdd835; 
-  color:#212121; 
-  cursor:pointer; 
-  font-weight:bold; 
-  box-shadow:0 4px 8px rgba(0,0,0,0.2); 
+button {
+  padding:10px 16px;
+  margin:8px 4px 0 4px;
+  font-size:16px;
+  border:none;
+  border-radius:12px;
+  background:#fdd835;
+  color:#212121;
+  cursor:pointer;
+  font-weight:bold;
+  box-shadow:0 4px 8px rgba(0,0,0,0.2);
 }
 
 /* Corner buttons */
@@ -99,7 +75,7 @@ button {
   font-weight:bold;
 }
 
-/* Popup boxes */
+/* Popups */
 .popup {
   position:fixed;
   top:0; left:0; right:0; bottom:0;
@@ -119,10 +95,6 @@ button {
 </style>
 </head>
 <body>
-
-<!-- ✅ Added Wind Runner image assets -->
-<img id="logo" src="windrunner.jpg" alt="Kite AI Logo">
-<img id="bgLogo" src="windrunner.jpg" alt="Kite AI Wind Runner Background">
 
 <div id="score">0</div>
 
@@ -180,7 +152,7 @@ const kite = {x:80, y:H/2, vy:0, w:40, h:40, angle:0};
 const gravity = 0.5;
 const lift = -10;
 let obstacles = [];
-const obstacleWidth = 70; 
+const obstacleWidth = 70;
 const gapHeight = 180;
 let frame = 0;
 let score = 0;
@@ -188,6 +160,10 @@ let gameOverFlag = false;
 let gameStarted = false;
 let paused = false;
 let animationId = null;
+
+// Load banner image for bricks 🧱
+const bannerImg = new Image();
+bannerImg.src = "windrunner.jpg"; // <-- use your banner image here
 
 // Clouds ☁️
 const cloudColors = ["#FFFFFF","#F0F0F0","#FFE0E0","#E0F7FA"];
@@ -292,28 +268,23 @@ function drawKite(){
   ctx.font=kite.h+"px serif";ctx.textAlign="center";ctx.fillText("🪁",0,kite.h*0.3);
   ctx.restore();
 }
+
+/* 🧱 Draw obstacles using banner texture */
 function drawObstacles(){
-  const brickHeight=30,brickWidth=obstacleWidth,text="KITEAI";
   obstacles.forEach(obs=>{
-    for(let y=0;y<obs.gapY;y+=brickHeight){
-      const grad=ctx.createLinearGradient(obs.x,y,obs.x+brickWidth,y+brickHeight);
-      grad.addColorStop(0,"#8B4513");grad.addColorStop(1,"#A0522D");
-      ctx.fillStyle=grad;ctx.fillRect(obs.x,y,brickWidth,brickHeight-2);
-      ctx.strokeStyle="rgba(0,0,0,0.2)";ctx.lineWidth=1;ctx.strokeRect(obs.x,y,brickWidth,brickHeight-2);
-      ctx.fillStyle="#FFD700";ctx.font="bold 14px Arial";ctx.textAlign="center";ctx.textBaseline="middle";
-      ctx.fillText(text,obs.x+brickWidth/2,y+brickHeight/2);
-    }
-    const lowerStart=obs.gapY+gapHeight;
-    for(let y=lowerStart;y<H;y+=brickHeight){
-      const grad=ctx.createLinearGradient(obs.x,y,obs.x+brickWidth,y+brickHeight);
-      grad.addColorStop(0,"#8B4513");grad.addColorStop(1,"#A0522D");
-      ctx.fillStyle=grad;ctx.fillRect(obs.x,y,brickWidth,brickHeight-2);
-      ctx.strokeStyle="rgba(0,0,0,0.2)";ctx.lineWidth=1;ctx.strokeRect(obs.x,y,brickWidth,brickHeight-2);
-      ctx.fillStyle="#FFD700";ctx.font="bold 14px Arial";ctx.textAlign="center";ctx.textBaseline="middle";
-      ctx.fillText(text,obs.x+brickWidth/2,y+brickHeight/2);
-    }
+    // Top part
+    ctx.save();
+    ctx.drawImage(bannerImg, obs.x, 0, obstacleWidth, obs.gapY);
+    ctx.restore();
+
+    // Bottom part
+    const lowerStart = obs.gapY + gapHeight;
+    ctx.save();
+    ctx.drawImage(bannerImg, obs.x, lowerStart, obstacleWidth, H - lowerStart);
+    ctx.restore();
   });
 }
+
 function draw(){drawBackground();drawObstacles();drawKite();}
 function gameLoop(){if(gameOverFlag||paused)return;update();draw();animationId=requestAnimationFrame(gameLoop);}
 function endGame(){
