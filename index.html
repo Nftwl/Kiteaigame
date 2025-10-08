@@ -120,12 +120,15 @@ const lift = -10;
 let obstacles = [];
 const obstacleWidth = 70; 
 const gapHeight = 180;
+let coins = [];
+const coinSize = 40;
 let frame = 0;
 let score = 0;
 let gameOverFlag = false;
 let gameStarted = false;
 let paused = false;
 let animationId = null;
+let coinRotation = 0;
 
 // Clouds ☁️
 const cloudColors = ["#FFFFFF","#F0F0F0","#FFE0E0","#E0F7FA"];
@@ -145,9 +148,13 @@ const jumpSound=document.getElementById('jumpSound');
 const pointSound=document.getElementById('pointSound');
 const crashSound=document.getElementById('crashSound');
 
+// 🪙 Coin image
+const coinImg = new Image();
+coinImg.src = "images/kite-ai-coin.png"; // Your logo path
+
 function resetGame(){
   kite.y=H/2;kite.vy=0;kite.angle=0;
-  obstacles=[];frame=0;score=0;particles.length=0;
+  obstacles=[];frame=0;score=0;particles.length=0;coins=[];
   gameOverFlag=false;gameStarted=false;
   scoreEl.textContent=score;
   overlay.style.display='flex';
@@ -177,10 +184,18 @@ shareBtn.addEventListener('click', ()=>{
   const text=encodeURIComponent(`I scored ${score} in Kite Flight! 🪁 #GoKiteFlight @GoKiteAI`);
   window.open(`https://x.com/intent/tweet?text=${text}`,'_blank','noopener');
 });
+
 function spawnObstacle(){
   const gapY=Math.random()*(H-gapHeight-100)+50;
   obstacles.push({x:W,gapY:gapY,passed:false});
 }
+
+// 🪙 Spawn coin occasionally
+function spawnCoin() {
+  const y = Math.random() * (H - 200) + 100;
+  coins.push({ x: W, y, collected: false });
+}
+
 function createParticles(){
   if(particles.length>=100) return;
   for(let i=0;i<5;i++){particles.push({x:kite.x,y:kite.y,vx:(Math.random()-0.5)*2,vy:Math.random()*-2,alpha:1});}
@@ -193,19 +208,42 @@ function update(){
   if(gameOverFlag||!gameStarted||paused)return;
   frame++;kite.vy+=gravity;kite.y+=kite.vy;kite.angle=Math.min(kite.vy*2,25);
   if(frame%90===0)spawnObstacle();
+  if(frame%150===0)spawnCoin();
   obstacles.forEach(obs=>{obs.x-=4;});
+  coins.forEach(c => { c.x -= 4; });
+  coinRotation += 0.1;
+
   for(let obs of obstacles){
     if(kite.x+kite.w>obs.x&&kite.x<obs.x+obstacleWidth){
       if(kite.y<obs.gapY||kite.y+kite.h>obs.gapY+gapHeight){endGame();}
     }
   }
   if(kite.y+kite.h>H||kite.y<0)endGame();
+
   obstacles.forEach(obs=>{
     if(!obs.passed&&obs.x+obstacleWidth<kite.x){
       score++;obs.passed=true;scoreEl.textContent=score;
       pointSound.currentTime=0;pointSound.play();
     }
   });
+
+  // 🪙 Coin collision
+  for (let c of coins) {
+    if (!c.collected &&
+        kite.x < c.x + coinSize &&
+        kite.x + kite.w > c.x &&
+        kite.y < c.y + coinSize &&
+        kite.y + kite.h > c.y) {
+      c.collected = true;
+      score += 5;
+      scoreEl.textContent = score;
+      pointSound.currentTime = 0;
+      pointSound.play();
+      createParticles();
+    }
+  }
+  coins = coins.filter(c => c.x + coinSize > 0 && !c.collected);
+
   obstacles=obstacles.filter(obs=>obs.x+obstacleWidth>0);
   clouds.forEach(c=>{c.x-=c.speed*2;if(c.x+150<0){c.x=W+Math.random()*200;c.color=cloudColors[Math.floor(Math.random()*cloudColors.length)];}});
   updateParticles();
@@ -252,7 +290,25 @@ function drawObstacles(){
     }
   });
 }
-function draw(){drawBackground();drawObstacles();drawKite();}
+
+// 🪙 Draw rotating coin
+function drawCoins() {
+  coins.forEach(c => {
+    ctx.save();
+    ctx.translate(c.x + coinSize / 2, c.y + coinSize / 2);
+    ctx.rotate(coinRotation);
+    ctx.drawImage(coinImg, -coinSize / 2, -coinSize / 2, coinSize, coinSize);
+    ctx.restore();
+  });
+}
+
+function draw(){
+  drawBackground();
+  drawObstacles();
+  drawCoins();
+  drawKite();
+}
+
 function gameLoop(){if(gameOverFlag||paused)return;update();draw();animationId=requestAnimationFrame(gameLoop);}
 function endGame(){
   gameOverFlag=true;overlay.style.display='flex';
