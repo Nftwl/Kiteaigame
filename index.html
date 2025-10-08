@@ -1,121 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kite Flight - GoKiteAI</title>
 <style>
-html, body {
-  margin:0;
-  padding:0;
-  overflow:hidden;
-  font-family: Arial, sans-serif;
-  background:#87CEEB;
+html, body { 
+  margin:0; padding:0; overflow:hidden; 
+  font-family: Arial, sans-serif; 
+  background:#87CEEB; 
+}
+canvas { display:block; }
+
+/* Score display */
+#score { 
+  position:absolute; 
+  top:20px; 
+  left:50%; 
+  transform:translateX(-50%); 
+  font-size:32px; 
+  font-weight:bold; 
+  color:#fff; 
+  text-shadow:2px 2px 4px #000; 
+  z-index:10; 
 }
 
-/* ===== Banner ===== */
-#kiteBanner {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 90px; /* slightly taller for visibility */
-  background-color: #2f1e17;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 50;
-  pointer-events: none; /* ensures banner doesn't block taps/clicks */
-  border-bottom: 3px solid #d4af37;
+/* ✅ Added logo + background image */
+#logo {
+  position:fixed;
+  top:10px;
+  left:60px;
+  width:80px;
+  opacity:0.9;
+  z-index:25;
 }
-#kiteBanner img {
-  height: 100%;
-  width: auto;
-  object-fit: contain;
-  opacity: 1;
-}
-
-/* Canvas + HUD */
-canvas {
-  display:block;
-  margin-top:90px; /* push gameplay below banner */
+#bgLogo {
+  position:fixed;
+  top:15%;
+  left:50%;
+  transform:translateX(-50%);
+  width:45%;
+  max-width:650px;
+  opacity:0.12;
+  pointer-events:none;
+  z-index:0;
+  filter: drop-shadow(0 0 10px rgba(255,255,255,0.3));
 }
 
-#score {
-  position: absolute;
-  top: 100px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 32px;
-  font-weight: bold;
-  color: #fff;
-  text-shadow: 2px 2px 4px #000;
-  z-index: 10;
-}
-
+/* Overlay + Buttons */
 #overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0,0,0,0.6);
-  z-index: 20;
-  flex-direction: column;
+  position:fixed; top:0; left:0; right:0; bottom:0;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(0,0,0,0.6); z-index:20; flex-direction:column;
 }
-
 #overlayContent {
-  background: linear-gradient(145deg,#ffffff,#f0f0f0);
-  padding: 20px;
-  border-radius: 16px;
-  text-align: center;
-  max-width: 320px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  background:linear-gradient(145deg,#ffffff,#f0f0f0); 
+  padding:20px; 
+  border-radius:16px; 
+  text-align:center; 
+  max-width:320px; 
+  box-shadow:0 8px 20px rgba(0,0,0,0.3);
+}
+button { 
+  padding:10px 16px; 
+  margin:8px 4px 0 4px; 
+  font-size:16px; 
+  border:none; 
+  border-radius:12px; 
+  background:#fdd835; 
+  color:#212121; 
+  cursor:pointer; 
+  font-weight:bold; 
+  box-shadow:0 4px 8px rgba(0,0,0,0.2); 
 }
 
-button {
-  padding: 10px 16px;
-  margin: 8px 4px 0 4px;
-  font-size: 16px;
-  border: none;
-  border-radius: 12px;
-  background: #fdd835;
-  color: #212121;
-  cursor: pointer;
-  font-weight: bold;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+/* Corner buttons */
+.corner-btn {
+  position:fixed;
+  top:10px;
+  z-index:30;
+  background:#fff7;
+  backdrop-filter:blur(8px);
+  font-size:14px;
+  padding:6px 10px;
+  border-radius:10px;
+  font-weight:bold;
+}
+#aboutBtn { left:10px; }
+#leaderBtn { right:10px; }
+#pauseBtn {
+  position:fixed;
+  bottom:10px; right:10px;
+  background:#fff7;
+  font-size:14px;
+  padding:6px 10px;
+  border-radius:10px;
+  z-index:30;
+  font-weight:bold;
 }
 
-/* Pause/Resume buttons */
-#controls {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  z-index: 15;
+/* Popup boxes */
+.popup {
+  position:fixed;
+  top:0; left:0; right:0; bottom:0;
+  display:none;
+  align-items:center; justify-content:center;
+  background:rgba(0,0,0,0.6);
+  z-index:40;
 }
-#controls button {
-  padding: 8px 12px;
-  font-size: 14px;
-  background: #ffffffcc;
-  color: #333;
-  border-radius: 8px;
-  font-weight: bold;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+.popup-content {
+  background:#fff;
+  padding:20px;
+  border-radius:16px;
+  text-align:center;
+  max-width:340px;
+  box-shadow:0 8px 20px rgba(0,0,0,0.3);
 }
 </style>
 </head>
-
 <body>
-<!-- ===== Banner ===== -->
-<div id="kiteBanner">
-  <img src="https://files.oaiusercontent.com/file-cCTebsGV2fbtqq2yiVktUpMz?se=2025-10-08T20%3A51%3A29Z&sp=r&sv=2022-11-02&sr=b&rscd=inline%3B%20filename%3Dkiteai_windrunner_banner.jpg"
-       alt="Kite AI Wind Runner" />
-</div>
+
+<!-- ✅ Added Wind Runner image assets -->
+<img id="logo" src="windrunner.jpg" alt="Kite AI Logo">
+<img id="bgLogo" src="windrunner.jpg" alt="Kite AI Wind Runner Background">
 
 <div id="score">0</div>
+
+<!-- Corner Buttons -->
+<button id="aboutBtn" class="corner-btn">ℹ️ About</button>
+<button id="leaderBtn" class="corner-btn">🏆 Leaderboard</button>
+<button id="pauseBtn">⏸ Pause</button>
 
 <div id="overlay">
   <div id="overlayContent">
@@ -126,20 +140,221 @@ button {
   </div>
 </div>
 
-<div id="controls">
-  <button id="pauseBtn">⏸ Pause</button>
-  <button id="resumeBtn" style="display:none;">▶ Resume</button>
+<!-- About Popup -->
+<div id="aboutPopup" class="popup">
+  <div class="popup-content">
+    <h2>About KiteAI 🪁</h2>
+    <p><b>KiteAI</b> combines deep learning with creative intelligence to empower developers and creators.</p>
+    <p>🚀 Mission: Making AI as effortless as flying a kite.</p>
+    <p>Official: <a href="https://x.com/GoKiteAI" target="_blank">@GoKiteAI</a></p>
+    <button onclick="document.getElementById('aboutPopup').style.display='none'">Close</button>
+  </div>
+</div>
+
+<!-- Leaderboard Popup -->
+<div id="leaderPopup" class="popup">
+  <div class="popup-content">
+    <h2>🏆 Leaderboard</h2>
+    <input id="xHandle" placeholder="@yourhandle" style="padding:8px;width:90%;border:1px solid #ccc;border-radius:8px;"><br><br>
+    <button id="saveScoreBtn">Save Score</button>
+    <ul id="leaderList" style="text-align:left;margin-top:10px;max-height:200px;overflow:auto;font-size:14px;"></ul>
+    <button onclick="document.getElementById('leaderPopup').style.display='none'">Close</button>
+  </div>
 </div>
 
 <canvas id="gameCanvas"></canvas>
 
+<!-- Sounds -->
 <audio id="jumpSound" src="https://assets.mixkit.co/sfx/preview/mixkit-player-jumping-in-a-video-game-2046.mp3"></audio>
 <audio id="pointSound" src="https://assets.mixkit.co/sfx/preview/mixkit-video-game-score-interface-2079.mp3"></audio>
 <audio id="crashSound" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-retro-game-over-213.mp3"></audio>
 
-<!-- ====== GAME SCRIPT (unchanged gameplay) ====== -->
 <script>
-/* same JavaScript as before */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let W = canvas.width = window.innerWidth;
+let H = canvas.height = window.innerHeight;
+
+const kite = {x:80, y:H/2, vy:0, w:40, h:40, angle:0};
+const gravity = 0.5;
+const lift = -10;
+let obstacles = [];
+const obstacleWidth = 70; 
+const gapHeight = 180;
+let frame = 0;
+let score = 0;
+let gameOverFlag = false;
+let gameStarted = false;
+let paused = false;
+let animationId = null;
+
+// Clouds ☁️
+const cloudColors = ["#FFFFFF","#F0F0F0","#FFE0E0","#E0F7FA"];
+const clouds=[];
+for(let i=0;i<6;i++){
+  clouds.push({x:Math.random()*W,y:Math.random()*H/2,scale:0.5+Math.random()*0.5,speed:0.2+Math.random()*0.3,color:cloudColors[Math.floor(Math.random()*cloudColors.length)]});
+}
+const particles=[];
+
+const scoreEl=document.getElementById('score');
+const overlay=document.getElementById('overlay');
+const overlayTitle=document.getElementById('overlayTitle');
+const overlayText=document.getElementById('overlayText');
+const startBtn=document.getElementById('startBtn');
+const shareBtn=document.getElementById('shareBtn');
+const jumpSound=document.getElementById('jumpSound');
+const pointSound=document.getElementById('pointSound');
+const crashSound=document.getElementById('crashSound');
+
+function resetGame(){
+  kite.y=H/2;kite.vy=0;kite.angle=0;
+  obstacles=[];frame=0;score=0;particles.length=0;
+  gameOverFlag=false;gameStarted=false;
+  scoreEl.textContent=score;
+  overlay.style.display='flex';
+  overlayTitle.textContent='🪁 Kite Flight';
+  overlayText.textContent='Tap or Click to Start';
+  startBtn.textContent='Start Game';
+  startBtn.style.display='inline-block';
+  shareBtn.style.display='none';
+  if(animationId) cancelAnimationFrame(animationId);
+}
+function startGame(){
+  if(gameStarted) return;
+  gameStarted=true;
+  overlay.style.display='none';
+  kite.vy=0;
+  animationId=requestAnimationFrame(gameLoop);
+}
+function togglePause(){
+  if(!gameStarted || gameOverFlag) return;
+  paused=!paused;
+  document.getElementById('pauseBtn').textContent=paused?'▶️ Resume':'⏸ Pause';
+  if(!paused) animationId=requestAnimationFrame(gameLoop);
+}
+document.getElementById('pauseBtn').onclick=togglePause;
+startBtn.addEventListener('click', ()=>{ resetGame(); startGame(); });
+shareBtn.addEventListener('click', ()=>{
+  const text=encodeURIComponent(`I scored ${score} in Kite Flight! 🪁 #GoKiteFlight @GoKiteAI`);
+  window.open(`https://x.com/intent/tweet?text=${text}`,'_blank','noopener');
+});
+function spawnObstacle(){
+  const gapY=Math.random()*(H-gapHeight-100)+50;
+  obstacles.push({x:W,gapY:gapY,passed:false});
+}
+function createParticles(){
+  if(particles.length>=100) return;
+  for(let i=0;i<5;i++){particles.push({x:kite.x,y:kite.y,vx:(Math.random()-0.5)*2,vy:Math.random()*-2,alpha:1});}
+}
+function updateParticles(){
+  particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.alpha-=0.02;});
+  for(let i=particles.length-1;i>=0;i--){if(particles[i].alpha<=0)particles.splice(i,1);}
+}
+function update(){
+  if(gameOverFlag||!gameStarted||paused)return;
+  frame++;kite.vy+=gravity;kite.y+=kite.vy;kite.angle=Math.min(kite.vy*2,25);
+  if(frame%90===0)spawnObstacle();
+  obstacles.forEach(obs=>{obs.x-=4;});
+  for(let obs of obstacles){
+    if(kite.x+kite.w>obs.x&&kite.x<obs.x+obstacleWidth){
+      if(kite.y<obs.gapY||kite.y+kite.h>obs.gapY+gapHeight){endGame();}
+    }
+  }
+  if(kite.y+kite.h>H||kite.y<0)endGame();
+  obstacles.forEach(obs=>{
+    if(!obs.passed&&obs.x+obstacleWidth<kite.x){
+      score++;obs.passed=true;scoreEl.textContent=score;
+      pointSound.currentTime=0;pointSound.play();
+    }
+  });
+  obstacles=obstacles.filter(obs=>obs.x+obstacleWidth>0);
+  clouds.forEach(c=>{c.x-=c.speed*2;if(c.x+150<0){c.x=W+Math.random()*200;c.color=cloudColors[Math.floor(Math.random()*cloudColors.length)];}});
+  updateParticles();
+}
+function drawCloud(ctx,x,y,scale,color){
+  ctx.fillStyle=color;
+  ctx.beginPath();
+  ctx.arc(x,y,30*scale,Math.PI*0.5,Math.PI*1.5);
+  ctx.arc(x+40*scale,y-20*scale,40*scale,Math.PI*1,Math.PI*1.85);
+  ctx.arc(x+80*scale,y,30*scale,Math.PI*1.37,Math.PI*1.91);
+  ctx.closePath();ctx.fill();
+}
+function drawBackground(){
+  const grad=ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,"#87CEEB");grad.addColorStop(1,"#a0d8ff");
+  ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+  clouds.forEach(c=>drawCloud(ctx,c.x,c.y,c.scale,c.color));
+  particles.forEach(p=>{ctx.fillStyle=`rgba(255,255,255,${p.alpha})`;ctx.beginPath();ctx.arc(p.x,p.y,3,0,2*Math.PI);ctx.fill();});
+}
+function drawKite(){
+  ctx.save();ctx.translate(kite.x+kite.w/2,kite.y+kite.h/2);ctx.rotate(kite.angle*Math.PI/180);
+  ctx.font=kite.h+"px serif";ctx.textAlign="center";ctx.fillText("🪁",0,kite.h*0.3);
+  ctx.restore();
+}
+function drawObstacles(){
+  const brickHeight=30,brickWidth=obstacleWidth,text="KITEAI";
+  obstacles.forEach(obs=>{
+    for(let y=0;y<obs.gapY;y+=brickHeight){
+      const grad=ctx.createLinearGradient(obs.x,y,obs.x+brickWidth,y+brickHeight);
+      grad.addColorStop(0,"#8B4513");grad.addColorStop(1,"#A0522D");
+      ctx.fillStyle=grad;ctx.fillRect(obs.x,y,brickWidth,brickHeight-2);
+      ctx.strokeStyle="rgba(0,0,0,0.2)";ctx.lineWidth=1;ctx.strokeRect(obs.x,y,brickWidth,brickHeight-2);
+      ctx.fillStyle="#FFD700";ctx.font="bold 14px Arial";ctx.textAlign="center";ctx.textBaseline="middle";
+      ctx.fillText(text,obs.x+brickWidth/2,y+brickHeight/2);
+    }
+    const lowerStart=obs.gapY+gapHeight;
+    for(let y=lowerStart;y<H;y+=brickHeight){
+      const grad=ctx.createLinearGradient(obs.x,y,obs.x+brickWidth,y+brickHeight);
+      grad.addColorStop(0,"#8B4513");grad.addColorStop(1,"#A0522D");
+      ctx.fillStyle=grad;ctx.fillRect(obs.x,y,brickWidth,brickHeight-2);
+      ctx.strokeStyle="rgba(0,0,0,0.2)";ctx.lineWidth=1;ctx.strokeRect(obs.x,y,brickWidth,brickHeight-2);
+      ctx.fillStyle="#FFD700";ctx.font="bold 14px Arial";ctx.textAlign="center";ctx.textBaseline="middle";
+      ctx.fillText(text,obs.x+brickWidth/2,y+brickHeight/2);
+    }
+  });
+}
+function draw(){drawBackground();drawObstacles();drawKite();}
+function gameLoop(){if(gameOverFlag||paused)return;update();draw();animationId=requestAnimationFrame(gameLoop);}
+function endGame(){
+  gameOverFlag=true;overlay.style.display='flex';
+  overlayTitle.textContent='Game Over! 🪁';
+  overlayText.innerHTML=`Score: ${score}<br><br>
+  CEO / Co-founder: @ChiZhangData<br>
+  CTO / Co-founder: @scottshics<br>
+  Official account: @GoKiteAI<br>
+  Made by @Vikash1234Singh<br>
+  “Kite AI: Wind Runner” Event`;
+  startBtn.textContent='Restart';
+  startBtn.style.display='inline-block';
+  shareBtn.style.display='inline-block';
+  crashSound.currentTime=0;crashSound.play();
+}
+window.addEventListener("resize",()=>{W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;});
+window.addEventListener('touchstart',()=>{if(!gameStarted)startGame();else{kite.vy=lift;jumpSound.currentTime=0;jumpSound.play();createParticles();}});
+window.addEventListener('mousedown',()=>{if(!gameStarted)startGame();else{kite.vy=lift;jumpSound.currentTime=0;jumpSound.play();createParticles();}});
+
+// About + Leaderboard logic
+const aboutBtn=document.getElementById('aboutBtn');
+const leaderBtn=document.getElementById('leaderBtn');
+const saveScoreBtn=document.getElementById('saveScoreBtn');
+const leaderList=document.getElementById('leaderList');
+let board=JSON.parse(localStorage.getItem("kiteAI_board")||"[]");
+aboutBtn.onclick=()=>document.getElementById('aboutPopup').style.display='flex';
+leaderBtn.onclick=()=>{document.getElementById('leaderPopup').style.display='flex';renderBoard();};
+saveScoreBtn.onclick=()=>{
+  const h=document.getElementById('xHandle').value.trim();
+  if(!h)return alert("Enter your X handle");
+  board.push({h,score});
+  board.sort((a,b)=>b.score-a.score);
+  localStorage.setItem("kiteAI_board",JSON.stringify(board));
+  renderBoard();
+};
+function renderBoard(){
+  leaderList.innerHTML=board.map((e,i)=>`<li>${i+1}. ${e.h} — <b>${e.score}</b></li>`).join("")||"<li>No entries yet</li>";
+}
+
+resetGame();
 </script>
 </body>
 </html>
