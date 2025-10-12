@@ -60,9 +60,29 @@ button { padding:10px 16px; margin:8px 4px 0 4px; font-size:16px; border:none; b
   max-width:340px;
   box-shadow:0 8px 20px rgba(0,0,0,0.3);
 }
+
+/* 🔥 Added KiteAI logo/SBT badge styling */
+#kiteLogo {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90px;
+  z-index: 50;
+  opacity: 0.9;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3));
+  transition: transform 0.3s ease;
+}
+#kiteLogo:hover {
+  transform: translateX(-50%) scale(1.08);
+}
 </style>
 </head>
 <body>
+
+<!-- 🔥 Added KiteAI logo/SBT -->
+<img id="kiteLogo" src="https://raw.githubusercontent.com/Vikash12Singh/assets/main/kiteai_sbt.png" alt="Kite AI SBT Badge" title="Kite AI: Wind Runner">
+
 <div id="score">0</div>
 
 <!-- Corner Buttons -->
